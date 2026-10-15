@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- このページは外部と一切通信しない。写真も記録も端末の外へは出ない -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src blob: data:; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#3B1418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="なんか受賞した">
+<title>なんか受賞した。</title>
+<style>
+/* =========================================================
+   なんか受賞した。
+   臙脂のビロードの壁に、金の額縁。文字は大真面目な明朝体。
+   ふざけた賞を、いちばん格式高く授与するためのデザイン。
+   ========================================================= */
+:root{
+  --wall:#4A1A1F;--wall2:#3B1418;--wall3:#2C0F12;
+  --gold:#C9A24A;--gold2:#E6CB86;--brass:#B08A3E;
+  --paper:#F7F1E3;--paper2:#EFE6D0;--ink:#2A2320;--soft:#6F6253;--line:#DCCFB2;
+  --red:#9B2F2A;--ok:#4F7A4A;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP",serif;
+  --gothic:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --navh:62px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:var(--gothic);color:var(--paper);background:var(--wall);font-size:16px;line-height:1.6;
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  /* ビロードの壁紙 */
+  background-image:radial-gradient(circle at 50% -10%,#6B2830 0,transparent 55%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 2px,transparent 2px 46px);
+  background-attachment:fixed}
+button,input,textarea,select{font:inherit;color:inherit}
+input,textarea{font-size:16px}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- 看板 ---------- */
+.top{text-align:center;padding:calc(18px + env(safe-area-inset-top,0px)) 16px 10px}
+.top h1{margin:0;font-family:var(--mincho);font-weight:700;font-size:28px;letter-spacing:.14em;color:var(--gold2);text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.top p{margin:4px 0 0;font-size:12px;color:#D9B9A6;letter-spacing:.08em}
+main{max-width:640px;margin:0 auto;padding:6px 14px calc(var(--navh) + 28px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- 式次第（表彰の手順） ---------- */
+.step{background:var(--paper);color:var(--ink);border-radius:4px;padding:18px 16px 16px;margin:14px 0;position:relative;
+  box-shadow:0 6px 18px rgba(0,0,0,.28);border-top:3px solid var(--gold)}
+.step h2{margin:0 0 12px;font-family:var(--mincho);font-size:19px;display:flex;align-items:baseline;gap:10px}
+.step h2 .no{font-size:14px;color:var(--brass);letter-spacing:.1em}
+.hint{font-size:12px;color:var(--soft);line-height:1.7;margin:6px 0 0}
+
+/* 写真の候補 */
+.stage{position:relative;aspect-ratio:4/3;background:var(--paper2);border:2px dashed var(--line);border-radius:6px;display:grid;place-items:center;overflow:hidden}
+.stage img{width:100%;height:100%;object-fit:contain;background:#1f1a17}
+.stage .ph{text-align:center;color:var(--soft);font-size:14px;padding:16px}
+.stage .ph b{display:block;font-family:var(--mincho);font-size:18px;color:var(--ink);margin-bottom:2px}
+.pickover{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+.tray{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none}
+.tray::-webkit-scrollbar{display:none}
+.tt{flex:none;position:relative;width:68px;height:68px}
+.tt button.pic{width:100%;height:100%;padding:0;border:none;border-radius:6px;overflow:hidden;background:#ddd}
+.tt button.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.tt button.pic[aria-pressed=true]{outline:3px solid var(--gold);outline-offset:2px}
+.tt .x{position:absolute;right:-6px;top:-6px;width:26px;height:26px;border-radius:50%;border:2px solid var(--paper);background:var(--ink);color:#fff;font-size:13px;line-height:1;padding:0}
+.addmore{flex:none;position:relative;width:68px;height:68px;border:2px dashed var(--line);border-radius:6px;display:grid;place-items:center;color:var(--soft);font-size:12px;text-align:center;line-height:1.3;overflow:hidden}
+.addmore input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+
+/* 賞の名前 */
+.fld{display:block;font-size:12px;color:var(--soft);margin:2px 0 4px}
+.namebox{width:100%;border:none;border-bottom:2px solid var(--ink);background:transparent;font-family:var(--mincho);font-weight:700;font-size:22px;padding:6px 2px;color:var(--ink);border-radius:0;line-height:1.35}
+.namebox:focus{outline:none;border-bottom-color:var(--brass)}
+.namebox.spin{color:var(--brass)}
+.dice{display:flex;gap:8px;margin:10px 0 14px}
+.btn{border:none;border-radius:999px;padding:10px 18px;min-height:46px;font-size:15px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.gold{background:var(--ink);color:var(--gold2)}
+.btn.ghost{background:var(--paper2);color:var(--ink)}
+.btn.line{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+.btn.warn{background:transparent;color:var(--red);box-shadow:inset 0 0 0 1.5px #E2BDB5}
+.reasonbox{width:100%;min-height:76px;border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;background:#fffdf7;color:var(--ink);font-family:var(--mincho);font-size:16px;line-height:1.7;resize:vertical}
+.reasonbox:focus{outline:none;border-color:var(--brass)}
+.row{display:flex;gap:8px;align-items:flex-start}
+.row>:first-child{flex:1;min-width:0}
+
+/* 額縁えらび */
+.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fopt{border:none;background:transparent;padding:0;text-align:center;color:var(--ink);font-size:12px}
+.fopt .sw{display:block;aspect-ratio:1;border-radius:2px;margin-bottom:4px;box-shadow:inset 0 0 0 7px var(--fc),inset 0 0 0 9px rgba(0,0,0,.25);background:#E9E1CF;transition:transform .15s}
+.fopt[aria-pressed=true] .sw{transform:scale(1.04);outline:3px solid var(--ink);outline-offset:3px}
+.fopt[aria-pressed=true]{font-weight:700}
+
+.grant{display:block;width:100%;margin:22px 0 6px;border:none;border-radius:6px;min-height:62px;font-family:var(--mincho);font-size:21px;font-weight:700;letter-spacing:.3em;
+  color:var(--wall3);background:linear-gradient(180deg,var(--gold2),var(--gold));box-shadow:0 4px 0 #8C6A25,0 10px 20px rgba(0,0,0,.35)}
+.grant:active{transform:translateY(2px);box-shadow:0 2px 0 #8C6A25,0 6px 12px rgba(0,0,0,.35)}
+.grantnote{text-align:center;font-size:12px;color:#D9B9A6;min-height:20px}
+
+/* ---------- 栄誉の壁 ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 18px;text-align:center}
+.stats div{border-top:1px solid rgba(201,162,74,.5);border-bottom:1px solid rgba(201,162,74,.5);padding:8px 0}
+.stats b{display:block;font-family:var(--mincho);font-size:26px;color:var(--gold2);line-height:1.2}
+.stats span{font-size:11px;color:#D9B9A6;letter-spacing:.06em}
+.wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 18px;padding:6px 4px}
+@media(min-width:560px){.wall{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.piece{border:none;background:transparent;padding:0;color:inherit;text-align:center;min-width:0;position:relative}
+.piece::before{content:"";position:absolute;left:50%;top:-14px;width:1px;height:14px;background:rgba(0,0,0,.35)}
+.frame{background:var(--fc,#A47743);padding:9px;position:relative;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.22),inset 0 0 0 4px rgba(0,0,0,.25),0 10px 18px rgba(0,0,0,.45)}
+.frame .mat{background:#F3ECDC;padding:7px}
+.frame img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#ccc}
+.plate{display:block;margin:10px auto 0;max-width:94%;padding:6px 8px;background:linear-gradient(180deg,#E3C987,#B8913F);color:#3A2A10;border-radius:2px;
+  box-shadow:0 2px 4px rgba(0,0,0,.4);font-family:var(--mincho);font-size:12px;font-weight:700;line-height:1.45;overflow-wrap:anywhere}
+.plate small{display:block;font-family:var(--gothic);font-weight:400;font-size:10px;opacity:.8;margin-top:1px}
+.ribbon{position:absolute;right:-6px;top:-8px;z-index:1;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:2px;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.emptywall{text-align:center;padding:40px 20px;color:#D9B9A6}
+.emptywall b{display:block;font-family:var(--mincho);font-size:19px;color:var(--gold2);margin-bottom:6px}
+.nudge{background:var(--paper);color:var(--ink);border-radius:4px;padding:10px 12px;margin:0 0 16px;display:flex;gap:10px;align-items:center;font-size:13px}
+.nudge span{flex:1}
+
+/* ---------- 保管庫 ---------- */
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv b{font-weight:700}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+.cats{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.cat{border:none;border-radius:999px;padding:7px 14px;min-height:40px;font-size:14px;background:var(--paper2);color:var(--ink)}
+.cat[aria-pressed=true]{background:var(--ink);color:var(--gold2);font-weight:700}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:6px;padding:10px 12px;background:#fffdf7;color:var(--ink)}
+.addrow input:focus{outline:none;border-color:var(--brass)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:2px;background:var(--paper2);color:var(--ink);border-radius:999px;padding:3px 3px 3px 12px;font-size:14px}
+.chip button{border:none;background:transparent;color:var(--soft);width:30px;height:30px;border-radius:50%;font-size:14px;padding:0}
+.privacy{font-size:12.5px;line-height:1.8;color:var(--ink)}
+.privacy li{margin-bottom:4px}
+
+/* ---------- 下のタブ ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--wall3);border-top:1px solid rgba(201,162,74,.35);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav>div{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);height:var(--navh)}
+.nav button{border:none;background:transparent;color:#B79A8C;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;letter-spacing:.06em}
+.nav button svg{width:24px;height:24px}
+.nav button[aria-current=page]{color:var(--gold2);font-weight:700}
+
+/* ---------- シート ---------- */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(20,6,8,.72);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);color:var(--ink);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+@media(min-width:680px){.scrim{align-items:center}.sheet{border-radius:12px}}
+@keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+.det .frame{max-width:340px;margin:6px auto 0}
+.det .frame img{aspect-ratio:auto;max-height:46vh;object-fit:contain;background:#1f1a17}
+.det h3{font-family:var(--mincho);font-size:22px;text-align:center;margin:16px 0 2px;overflow-wrap:anywhere;line-height:1.4}
+.det .meta{text-align:center;font-size:12px;color:var(--soft)}
+.det dl{margin:14px 0 6px;font-family:var(--mincho);line-height:1.8}
+.det dt{font-family:var(--gothic);font-size:11px;color:var(--soft);margin-top:10px;letter-spacing:.06em}
+.det dd{margin:0;overflow-wrap:anywhere}
+
+/* ---------- 授与式 ---------- */
+.cere{position:fixed;inset:0;z-index:30;color:var(--paper);text-align:center;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(20px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(ellipse at 50% 30%,#7A2E36 0,#3B1418 55%,#1A0709 100%)}
+.cere::before{content:"";position:absolute;left:50%;top:-10%;width:120%;height:90%;transform:translateX(-50%);
+  background:radial-gradient(ellipse at 50% 0,rgba(255,236,190,.28),transparent 60%);pointer-events:none}
+.cere .kai{font-family:var(--mincho);font-size:13px;letter-spacing:.35em;color:var(--gold2);opacity:.85}
+.cere .ann{font-family:var(--mincho);font-size:17px;margin:14px 0 4px;min-height:1.6em}
+.cere .ttl{font-family:var(--mincho);font-weight:700;font-size:clamp(24px,7.4vw,36px);line-height:1.35;margin:4px 0 16px;color:var(--gold2);overflow-wrap:anywhere;text-shadow:0 3px 0 rgba(0,0,0,.4);min-height:1.35em}
+.cere .frame{width:min(62vw,260px)}
+.cere .omedeto{font-family:var(--mincho);font-size:22px;font-weight:700;margin:20px 0 6px;letter-spacing:.12em}
+.cere .sub{font-size:13px;color:#E3CDBE;line-height:1.7;max-width:420px}
+.cere .act{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center}
+.cere .act .btn.ghost{background:rgba(255,255,255,.12);color:var(--paper)}
+.cere .act .btn.gold{background:var(--gold);color:var(--wall3)}
+.drop{animation:drop 1s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes drop{from{transform:translateY(-70vh) rotate(-10deg)}70%{transform:rotate(2deg)}to{transform:none}}
+.fade{animation:fade .5s ease-out both}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.conf{position:absolute;top:-24px;width:9px;height:15px;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(800deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.conf{display:none}}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;
+  background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>なんか受賞した。</h1>
+  <p>人生いろいろある。とりあえず表彰しよう。</p>
+</header>
+
+<main>
+  <!-- ===== 表彰する ===== -->
+  <section id="vAward">
+    <div class="step">
+      <h2><span class="no">其の一</span>受賞する写真</h2>
+      <div class="stage" id="stage"></div>
+      <div class="tray" id="tray"></div>
+      <p class="hint">写真は取り込む時に描き直すので、撮影場所などの情報は残りません。</p>
+    </div>
+
+    <div class="step">
+      <h2><span class="no">其の二</span>賞を決める</h2>
+      <label class="fld" for="name">賞の名前</label>
+      <input class="namebox" id="name" maxlength="60" autocomplete="off" placeholder="例：銀河こんにゃく功労賞">
+      <div class="dice"><button class="btn gold" id="spin">🎲 審査会を開く</button></div>
+      <label class="fld" for="reason">受賞理由</label>
+      <div class="row"><textarea class="reasonbox" id="reason" maxlength="200" placeholder="特に理由はありません。"></textarea><button class="btn ghost" id="spinReason" aria-label="受賞理由を考えてもらう">🎲</button></div>
+    </div>
+
+    <div class="step">
+      <h2><span class="no">其の三</span>額縁を選ぶ</h2>
+      <div class="frames" id="frames"></div>
+    </div>
+
+    <button class="grant" id="grant">授 与 す る</button>
+    <p class="grantnote" id="grantNote"></p>
+  </section>
+
+  <!-- ===== 栄誉の壁 ===== -->
+  <section id="vWall" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div id="nudge"></div>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <!-- ===== 保管庫 ===== -->
+  <section id="vVault" class="hidden">
+    <div class="step">
+      <h2>記録のバックアップ</h2>
+      <div class="kv"><span>飾ってある賞</span><b id="vCount">0</b></div>
+      <div class="kv"><span>前回のバックアップ</span><b id="vLast">まだありません</b></div>
+      <p class="hint">iPhoneのSafariは、しばらく開かないサイトの記録を消すことがあります。ときどきバックアップして、「ファイル」の iCloud Drive に保存しておくと安心です。<br><b>バックアップには写真がそのまま入ります。</b>人に渡す時は気をつけてください。</p>
+      <div class="btns">
+        <button class="btn gold" id="exportBtn">バックアップを保存</button>
+        <span class="btn line filebtn">バックアップから戻す<input type="file" id="restoreIn" accept=".json,application/json" aria-label="バックアップから戻す"></span>
+      </div>
+    </div>
+
+    <div class="step">
+      <h2>語彙辞典</h2>
+      <p class="hint" style="margin:0 0 10px">賞の名前は「前置き・名詞・組織・賞の種類」をくじ引きして作っています。言葉を足すと、審査会の発想が広がります。</p>
+      <div class="cats" id="cats"></div>
+      <div class="addrow"><input id="wordIn" maxlength="16" placeholder="足す言葉" autocomplete="off" aria-label="足す言葉" enterkeyhint="done"><button class="btn gold" id="wordAdd">足す</button></div>
+      <div class="chips" id="chips"></div>
+      <div class="btns"><button class="btn line" id="wordReset">最初の言葉に戻す</button></div>
+    </div>
+
+    <div class="step">
+      <h2>写真と記録のあつかい</h2>
+      <ul class="privacy">
+        <li>写真と記録は、このiPhoneのブラウザの中だけに保存されます。</li>
+        <li>このページは、外のサーバーと通信できない設定になっています。写真がどこかへ送られることはありません。</li>
+        <li>写真は取り込む時に描き直して、撮影場所・日時・機種などの情報を取り除いています。</li>
+        <li>名前・住所・ログインなどは一切使いません。</li>
+      </ul>
+      <div class="btns"><button class="btn warn" id="wipeBtn">すべての記録を消す</button></div>
+    </div>
+  </section>
+</main>
+
+<nav class="nav" aria-label="切り替え"><div>
+  <button data-v="vAward" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M9 13.5 7.5 21l4.5-2.5 4.5 2.5L15 13.5"/></svg>表彰する</button>
+  <button data-v="vWall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="8" height="10"/><rect x="13" y="5" width="8" height="7"/><rect x="13" y="14" width="8" height="5"/><path d="M3 19h8"/></svg>栄誉の壁</button>
+  <button data-v="vVault"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M12 9V7M12 17v-2M9 12H7M17 12h-2"/></svg>保管庫</button>
+</div></nav>
+
+<!-- 賞の詳細 -->
+<div class="scrim hidden" id="detS"><div class="sheet det" role="dialog" aria-modal="true" aria-labelledby="dName">
+  <div class="frame" id="dFrame"><div class="mat"><img id="dImg" alt="受賞した写真"></div></div>
+  <h3 id="dName"></h3>
+  <div class="meta" id="dMeta"></div>
+  <dl>
+    <dt>受賞理由</dt><dd id="dReason"></dd>
+    <dt>審査員講評</dt><dd id="dComment"></dd>
+    <dt>副賞</dt><dd id="dPrize"></dd>
+  </dl>
+  <div class="btns">
+    <button class="btn gold" id="dCert">📜 賞状にする</button>
+    <button class="btn ghost" data-close>閉じる</button>
+    <button class="btn warn" id="dDel">受賞を取り消す</button>
+  </div>
+</div></div>
+
+<!-- 授与式 -->
+<div class="cere hidden" id="cere" role="dialog" aria-modal="true" aria-labelledby="cTtl">
+  <div class="kai" id="cKai"></div>
+  <div class="ann" id="cAnn"></div>
+  <div class="ttl" id="cTtl"></div>
+  <div class="frame hidden" id="cFrame"><div class="mat"><img id="cImg" alt="受賞した写真"></div></div>
+  <div id="cAfter" class="hidden">
+    <div class="omedeto fade">おめでとうございます</div>
+    <div class="sub fade" id="cSub"></div>
+    <div class="act fade"><button class="btn ghost" id="cCert">📜 賞状にする</button><button class="btn gold" id="cClose">壁に飾る</button></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   言葉
+   ========================================================= */
+const DEFAULT_WORDS=[
+ ["銀河","深海","超時空","量子","発酵","町内","古代","ぬるぬる","幻の","半透明","究極","逆さま","真夜中の","第三次","全日本","ふわふわ"],
+ ["こんにゃく","おしぼり","マンモス","プリン","歯ブラシ","土星","靴下","カピバラ","電柱","茶碗蒸し","枕","水道局","ちくわ","洗濯ばさみ","信号機","味噌汁"],
+ ["文明","帝国","共和国","協会","研究所","連邦","保存委員会","評議会","同好会","振興財団","学会","組合"],
+ ["特別賞","功労賞","文化勲章","最高栄誉賞","大賞","永久名誉賞","金賞","感謝状","奨励賞","審査員特別賞"]
+];
+const CAT_NAMES=["前置き","名詞","組織","賞の種類"];
+const REASONS=[
+ "特に理由はないが、満場一致で決定しました。",
+ "貴殿の不可解な功績をここに讃えます。",
+ "審査員一同、何が起きたのか理解しておりません。",
+ "極めて高度な何かを達成した可能性があります。",
+ "世界の平和とは無関係ですが、誠におめでとうございます。",
+ "本日も生きていたことを、ここに高く評価します。",
+ "審査の途中で全員お腹が空いたため、本賞に決定しました。",
+ "前例のない出来事であり、前例を作ったことを讃えます。",
+ "たぶん、すごかった。"
+];
+const COMMENTS=[
+ n=>`「${n}」という概念に正面から向き合った姿勢が、審査員の涙を誘った。`,
+ n=>`一見ただの写真だが、背後に${n}の気配を感じるとの声が相次いだ。`,
+ n=>`審査員の一人は「これは${n}の新時代だ」と語り、そのまま帰宅した。`,
+ n=>`本作をめぐり、審査会は三時間にわたり${n}の話で紛糾した。`,
+ ()=>`講評を書こうとしたが、感動のあまり言葉にならなかった。`,
+ ()=>`特に言うことはないが、とても良いと思う。`,
+ n=>`${n}の歴史に、新たな一頁が加わった瞬間である。`
+];
+const PRIZES=[
+ n=>`${n}三年分`,
+ n=>`${n}の名誉会員証`,
+ (n,o)=>`${o}への終身入会権`,
+ ()=>`審査員の拍手（録音）`,
+ ()=>`特にありません`,
+ n=>`等身大の${n}（※概念）`,
+ n=>`${n}の絵が描かれたシール一枚`
+];
+const FRAMES=[["#A47743","木製"],["#C49B37","黄金"],["#9BA0A6","銀"],["#252525","漆黒"],["#C58BA0","桜"],["#3F5E7E","藍"]];
+const FRAME_OK=new Set(FRAMES.map(f=>f[0]));
+const KANJI_NUM=n=>String(n);
+
+/* =========================================================
+   小道具
+   ========================================================= */
+const $=id=>document.getElementById(id);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const uuid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,12);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
+/* 画面に出す文字は必ず textContent で入れる（HTMLとして解釈させない） */
+function h(tag,props,...kids){const e=document.createElement(tag);if(props)for(const[k,v]of Object.entries(props)){
+  if(k==='style'){for(const[sk,sv]of Object.entries(v)){if(sk.startsWith('--'))e.style.setProperty(sk,sv);else e.style[sk]=sv}}else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k==='text')e.textContent=v;else e.setAttribute(k,v)}
+  for(const c of kids)if(c!=null)e.append(c);return e}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2000)}
+const fmtDate=iso=>{const d=new Date(iso);return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'};
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+/* =========================================================
+   語彙（壊れていても起動を止めない）
+   ========================================================= */
+function okWords(w){return Array.isArray(w)&&w.length===4&&w.every(g=>Array.isArray(g)&&g.length>0&&g.length<=300&&g.every(x=>typeof x==='string'&&x.trim()&&x.length<=16))}
+function loadWords(){try{const w=JSON.parse(localStorage.getItem('awardWords'));if(okWords(w))return w}catch(e){}return structuredCloneSafe(DEFAULT_WORDS)}
+function structuredCloneSafe(v){return JSON.parse(JSON.stringify(v))}
+let words=loadWords();
+function saveWords(){try{localStorage.setItem('awardWords',JSON.stringify(words))}catch(e){toast('語彙を保存できませんでした')}}
+const makeName=()=>words.map(pick).join('');
+
+/* =========================================================
+   保存（IndexedDB）
+   awards：飾った賞   tray：表彰を待っている写真
+   ========================================================= */
+let DB=null;
+const dbReady=new Promise((resolve,reject)=>{
+  if(!window.indexedDB){reject(Error('no idb'));return}
+  const r=indexedDB.open('NankaAwardDB',2);
+  r.onupgradeneeded=()=>{const d=r.result;
+    if(!d.objectStoreNames.contains('awards'))d.createObjectStore('awards',{keyPath:'id'});
+    if(!d.objectStoreNames.contains('tray'))d.createObjectStore('tray',{keyPath:'id'})};
+  r.onsuccess=()=>{DB=r.result;resolve(DB)};
+  r.onerror=()=>reject(r.error);
+  r.onblocked=()=>toast('別のタブで開いていると準備できません。ほかのタブを閉じてください');
+});
+dbReady.catch(()=>{$('grantNote').textContent='このブラウザでは記録を保存できません（プライベートブラウズでは使えないことがあります）'});
+function store(name,mode,fn){return dbReady.then(d=>new Promise((ok,ng)=>{const t=d.transaction(name,mode),req=fn(t.objectStore(name));
+  t.oncomplete=()=>ok(req?req.result:undefined);t.onerror=()=>ng(t.error);t.onabort=()=>ng(t.error||Error('abort'))}))}
+const A={put:r=>store('awards','readwrite',s=>s.put(r)),del:id=>store('awards','readwrite',s=>s.delete(id)),all:()=>store('awards','readonly',s=>s.getAll()).then(a=>a||[]),clear:()=>store('awards','readwrite',s=>s.clear())};
+const T={put:r=>store('tray','readwrite',s=>s.put(r)),del:id=>store('tray','readwrite',s=>s.delete(id)),all:()=>store('tray','readonly',s=>s.getAll()).then(a=>a||[]),clear:()=>store('tray','readwrite',s=>s.clear())};
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+
+/* =========================================================
+   写真：読み込み → 縮小して描き直す（撮影情報はここで消える）
+   ファイルの種類が空でも、まず画像として読んでみる
+   ========================================================= */
+function decode(file){
+  return new Promise((ok,ng)=>{
+    const tryBitmap=()=>{if(!window.createImageBitmap)return ng(Error('この形式の写真は読めませんでした'));
+      createImageBitmap(file).then(b=>ok({src:b,w:b.width,h:b.height,done:()=>b.close&&b.close()})).catch(()=>ng(Error('この形式の写真は読めませんでした')))};
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>ok({src:img,w:img.naturalWidth,h:img.naturalHeight,done:()=>URL.revokeObjectURL(url)});
+    img.onerror=()=>{URL.revokeObjectURL(url);tryBitmap()};
+    img.src=url;
+  });
+}
+function render(d,max,q){
+  return new Promise((ok,ng)=>{
+    const s=Math.min(1,max/Math.max(d.w,d.h)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(d.w*s));c.height=Math.max(1,Math.round(d.h*s));
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(d.src,0,0,c.width,c.height);
+    c.toBlob(b=>b?ok(b):ng(Error('写真の変換に失敗しました')),'image/jpeg',q);
+  });
+}
+async function processPhoto(file){
+  if(file.size>60*1024*1024)throw Error('写真が大きすぎます');
+  const d=await decode(file);
+  try{const image=await render(d,1600,.85),thumb=await render(d,480,.8);return{image,thumb}}finally{d.done()}
+}
+/* 表示用URLの後片付け */
+const urls=new Map();
+function urlOf(key,blob){const old=urls.get(key);if(old&&old.b===blob)return old.u;if(old)URL.revokeObjectURL(old.u);const u=URL.createObjectURL(blob);urls.set(key,{u,b:blob});return u}
+function dropUrl(key){const o=urls.get(key);if(o){URL.revokeObjectURL(o.u);urls.delete(key)}}
+
+/* =========================================================
+   其の一：写真
+   ========================================================= */
+let tray=[],sel=null;
+async function loadTray(){try{tray=(await T.all()).sort((a,b)=>a.at-b.at)}catch(e){tray=[]}if(!tray.find(t=>t.id===sel))sel=tray.length?tray[tray.length-1].id:null;renderTray()}
+function fileInput(cls){const i=h('input',{type:'file',accept:'image/*',multiple:'',class:cls,'aria-label':'写真を選ぶ'});i.addEventListener('change',onFiles);return i}
+async function onFiles(e){
+  const files=[...e.target.files];e.target.value='';if(!files.length)return;
+  $('grantNote').textContent='写真を取り込んでいます…';let bad=0,why='',last=null;
+  for(const f of files){
+    try{const p=await processPhoto(f);const r={id:uuid(),at:Date.now(),image:p.image,thumb:p.thumb};await T.put(r);tray.push(r);last=r.id}
+    catch(err){bad++;why=err.message}
+  }
+  if(last)sel=last;renderTray();
+  $('grantNote').textContent=bad?`${files.length-bad}枚を取り込み、${bad}枚は取り込めませんでした（${why}）`:'';
+  if(!bad)toast(files.length+'枚を取り込みました');
+}
+function renderTray(){
+  const st=$('stage');st.replaceChildren();const cur=tray.find(t=>t.id===sel);
+  if(cur){st.append(h('img',{src:urlOf('t:'+cur.id,cur.image),alt:'表彰する写真'}))}
+  else{st.append(h('div',{class:'ph'},h('b',{text:'ここを押して写真を選ぶ'}),'今日の、ちょっといい瞬間を。'),fileInput('pickover'))}
+  const tr=$('tray');tr.replaceChildren();
+  if(tray.length){
+    tray.forEach(t=>{
+      tr.append(h('div',{class:'tt'},
+        h('button',{class:'pic','aria-pressed':String(t.id===sel),'aria-label':'この写真を選ぶ',onclick:()=>{sel=t.id;renderTray()}},h('img',{src:urlOf('tt:'+t.id,t.thumb||t.image),alt:''})),
+        h('button',{class:'x','aria-label':'この写真を外す',text:'×',onclick:async()=>{await T.del(t.id).catch(()=>{});dropUrl('t:'+t.id);dropUrl('tt:'+t.id);tray=tray.filter(x=>x!==t);if(sel===t.id)sel=tray.length?tray[tray.length-1].id:null;renderTray()}})));
+    });
+    tr.append(h('div',{class:'addmore'},'＋',h('br'),'足す',fileInput('')));
+  }
+  tr.classList.toggle('hidden',!tray.length);
+}
+
+/* =========================================================
+   其の二：賞の名前（くじ引きの演出つき）
+   ========================================================= */
+let spinning=false;
+async function spinName(){
+  if(spinning)return;spinning=true;const nb=$('name');nb.classList.add('spin');$('spin').disabled=true;
+  const end=Date.now()+(reduce?0:850);
+  while(Date.now()<end){nb.value=makeName();await new Promise(r=>setTimeout(r,55))}
+  nb.value=makeName();nb.classList.remove('spin');$('spin').disabled=false;spinning=false;
+}
+$('spin').onclick=spinName;
+$('spinReason').onclick=()=>{$('reason').value=pick(REASONS)};
+
+/* =========================================================
+   其の三：額縁
+   ========================================================= */
+let frame=FRAMES[0][0];
+function renderFrames(){$('frames').replaceChildren(...FRAMES.map(([c,n])=>h('button',{class:'fopt','aria-pressed':String(c===frame),onclick:()=>{frame=c;renderFrames()}},h('span',{class:'sw',style:{'--fc':c}}),n)))}
+
+/* =========================================================
+   授与
+   ========================================================= */
+$('grant').onclick=async()=>{
+  const cur=tray.find(t=>t.id===sel);
+  if(!cur){toast('まず、受賞する写真を選んでください');$('vAward').scrollIntoView({behavior:'smooth'});return}
+  const name=$('name').value.trim();if(!name){toast('賞の名前が決まっていません');$('name').focus();return}
+  const noun=pick(words[1]),org=noun+pick(words[2]);
+  let count=0;try{count=(await A.all()).length}catch(e){}
+  const rec={id:uuid(),no:count+1,date:new Date().toISOString(),name:name.slice(0,60),reason:$('reason').value.trim().slice(0,200)||pick(REASONS),
+    comment:pick(COMMENTS)(noun),prize:pick(PRIZES)(noun,org),color:frame,image:cur.image,thumb:cur.thumb};
+  try{await A.put(rec)}catch(e){toast('保存できませんでした。iPhoneの空き容量を確認してください');return}
+  await T.del(cur.id).catch(()=>{});tray=tray.filter(t=>t!==cur);dropUrl('t:'+cur.id);dropUrl('tt:'+cur.id);
+  sel=tray.length?tray[tray.length-1].id:null;renderTray();
+  $('reason').value='';spinName();
+  ceremony(rec);
+};
+
+/* =========================================================
+   授与式
+   ========================================================= */
+let cereRec=null;
+async function ceremony(r){
+  cereRec=r;const c=$('cere');
+  $('cKai').textContent=`第${KANJI_NUM(r.no)}回　授与式`;$('cAnn').textContent='';$('cTtl').textContent='';
+  $('cFrame').classList.add('hidden');$('cAfter').classList.add('hidden');c.querySelectorAll('.conf').forEach(x=>x.remove());
+  $('cImg').src=urlOf('c',r.image);$('cFrame').style.setProperty('--fc',r.color);
+  c.classList.remove('hidden');
+  $('cAnn').textContent='審査結果を発表します';await wait(900);
+  $('cAnn').textContent='……';await wait(700);
+  $('cAnn').textContent='受賞は';
+  const t=$('cTtl');for(const ch of r.name){t.textContent+=ch;await wait(45)}
+  const f=$('cFrame');f.classList.remove('hidden');f.classList.remove('drop');void f.offsetWidth;f.classList.add('drop');
+  confetti(c);await wait(700);
+  $('cSub').textContent=`副賞：${r.prize}`;$('cAfter').classList.remove('hidden');$('cClose').focus();
+}
+function confetti(box){if(reduce)return;const cols=['#E6CB86','#F2E6C9','#C9A24A','#E9A3A3','#ffffff'];
+  for(let i=0;i<46;i++){box.append(h('i',{class:'conf',style:{left:Math.random()*100+'%',background:pick(cols),animationDuration:(2.2+Math.random()*2.4)+'s',animationDelay:(Math.random()*.6)+'s',borderRadius:Math.random()<.4?'50%':'1px'}}))}}
+$('cClose').onclick=()=>{$('cere').classList.add('hidden');go('vWall')};
+$('cCert').onclick=()=>{if(cereRec)certificate(cereRec)};
+
+/* =========================================================
+   栄誉の壁
+   ========================================================= */
+let awards=[];
+async function renderWall(){
+  try{awards=(await A.all()).filter(r=>r&&r.image).sort((a,b)=>String(b.date).localeCompare(String(a.date)))}catch(e){awards=[]}
+  /* 番号のない古い記録には、日付順で番号を振る */
+  [...awards].reverse().forEach((r,i)=>{if(!r.no)r.no=i+1});
+  const now=new Date(),thisMonth=ymd(now).slice(0,7);
+  const days=new Set(awards.map(r=>ymd(new Date(r.date))));let streak=0;const d=new Date(now);
+  if(!days.has(ymd(d)))d.setDate(d.getDate()-1);while(days.has(ymd(d))){streak++;d.setDate(d.getDate()-1)}
+  $('stats').replaceChildren(
+    h('div',null,h('b',{text:String(awards.length)}),h('span',{text:'通算受賞'})),
+    h('div',null,h('b',{text:String(awards.filter(r=>String(r.date).slice(0,7)===thisMonth).length)}),h('span',{text:'今月の受賞'})),
+    h('div',null,h('b',{text:String(streak)}),h('span',{text:'連続受賞（日）'})));
+  const last=+localStorage.getItem('lastBackup')||0,since=Math.floor((Date.now()-(last||+localStorage.getItem('firstUse')||Date.now()))/864e5);
+  $('nudge').replaceChildren(...(awards.length>=3&&since>=7?[h('div',{class:'nudge'},h('span',{text:last?`前回のバックアップから${since}日たちました。`:'まだバックアップがありません。'}),h('button',{class:'btn gold',text:'保存する',onclick:backup}))]:[]));
+  const w=$('wall');w.replaceChildren();
+  if(!awards.length){w.append(h('div',{class:'emptywall',style:{gridColumn:'1/-1'}},h('b',{text:'まだ何も飾られていない'}),'最初の栄誉を、壁が待っている。'));return}
+  const milestone=n=>n===1||n%10===0;
+  for(const r of awards){
+    const color=FRAME_OK.has(r.color)?r.color:FRAMES[0][0];
+    w.append(h('button',{class:'piece','aria-label':r.name+'の詳細',onclick:()=>openDetail(r)},
+      h('div',{class:'frame',style:{'--fc':color}},milestone(r.no)?h('span',{class:'ribbon',text:r.no===1?'初受賞':`第${r.no}号`}):null,h('div',{class:'mat'},h('img',{src:urlOf('w:'+r.id,r.thumb||r.image),alt:'',loading:'lazy'}))),
+      h('span',{class:'plate'},r.name,h('small',{text:fmtDate(r.date)}))));
+  }
+}
+
+/* =========================================================
+   賞の詳細
+   ========================================================= */
+let detRec=null;
+function openDetail(r){
+  detRec=r;$('dImg').src=urlOf('d',r.image);$('dFrame').style.setProperty('--fc',FRAME_OK.has(r.color)?r.color:FRAMES[0][0]);
+  $('dName').textContent=r.name;$('dMeta').textContent=`第${r.no}号　${fmtDate(r.date)} 受賞`;
+  $('dReason').textContent=r.reason||'受賞理由は不明です。';$('dComment').textContent=r.comment||'講評は紛失しました。';$('dPrize').textContent=r.prize||'特にありません';
+  openS('detS');
+}
+$('dCert').onclick=()=>{if(detRec)certificate(detRec)};
+$('dDel').onclick=async()=>{if(!detRec||!confirm(`「${detRec.name}」の受賞を取り消しますか？\n写真も一緒に消えます。`))return;
+  try{await A.del(detRec.id)}catch(e){toast('取り消せませんでした');return}dropUrl('w:'+detRec.id);closeS('detS');renderWall();toast('受賞を取り消しました。審査員は反省しています')};
+
+/* =========================================================
+   賞状（画像にして保存・共有）
+   ========================================================= */
+function lines(x,text,maxW,max){const out=[];let l='';for(const ch of text){if(x.measureText(l+ch).width>maxW&&l){out.push(l);l=ch}else l+=ch}if(l)out.push(l);
+  if(out.length>max){out.length=max;out[max-1]=out[max-1].slice(0,-1)+'…'}return out}
+async function certificate(r){
+  toast('賞状を作っています…');
+  const W=1240,H=1754,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const M='"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP",serif';
+  x.fillStyle='#FBF6EA';x.fillRect(0,0,W,H);
+  x.strokeStyle='#B08A3E';x.lineWidth=18;x.strokeRect(46,46,W-92,H-92);x.lineWidth=3;x.strokeRect(84,84,W-168,H-168);
+  x.fillStyle='#2A2320';x.textAlign='center';
+  x.font='700 112px '+M;x.fillText('賞　状',W/2,250);
+  x.font='400 30px '+M;x.fillText(`第${r.no||1}号`,W/2,310);
+  x.font='700 60px '+M;lines(x,r.name,W-260,2).forEach((l,i)=>x.fillText(l,W/2,410+i*76));
+  const d=await decode(r.image).catch(()=>null);const S=560,px=(W-S)/2,py=540;
+  x.fillStyle=FRAME_OK.has(r.color)?r.color:'#A47743';x.fillRect(px-34,py-34,S+68,S+68);
+  x.fillStyle='#F3ECDC';x.fillRect(px-12,py-12,S+24,S+24);
+  if(d){const s=Math.max(S/d.w,S/d.h),sw=S/s,sh=S/s;x.drawImage(d.src,(d.w-sw)/2,(d.h-sh)/2,sw,sh,px,py,S,S);d.done()}
+  x.fillStyle='#2A2320';x.textAlign='left';x.font='400 40px '+M;
+  const body=(r.reason||'')+'よってここにその栄誉を讃えます。';
+  lines(x,body,W-300,4).forEach((l,i)=>x.fillText(l,150,1260+i*62));
+  x.font='400 32px '+M;x.fillText('副賞　'+(r.prize||'特にありません'),150,1540);
+  x.textAlign='right';x.fillText(fmtDate(r.date),W-150,1540);
+  x.font='700 38px '+M;x.fillText('なんか受賞した。審査委員会',W-150,1610);
+  const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));if(!blob){toast('賞状を作れませんでした');return}
+  const file=new File([blob],'shoujou.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:r.name});return}catch(e){if(e&&e.name==='AbortError')return}}
+  const u=URL.createObjectURL(blob);const a=h('a',{href:u,download:'shoujou.png'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+}
+
+/* =========================================================
+   語彙辞典
+   ========================================================= */
+let cat=1;
+function renderWords(){
+  $('cats').replaceChildren(...CAT_NAMES.map((n,i)=>h('button',{class:'cat','aria-pressed':String(i===cat),onclick:()=>{cat=i;renderWords()}},`${n}（${words[i].length}）`)));
+  $('chips').replaceChildren(...words[cat].map((w,i)=>h('span',{class:'chip'},w,h('button',{'aria-label':w+'を消す',text:'×',onclick:()=>{
+    if(words[cat].length<=1){toast('最後の一つは消せません');return}words[cat].splice(i,1);saveWords();renderWords()}}))));
+}
+function addWord(){const v=$('wordIn').value.trim();if(!v)return;if(v.length>16){toast('16文字までにしてください');return}
+  if(words[cat].includes(v)){toast('もう入っています');return}words[cat].push(v);saveWords();$('wordIn').value='';renderWords();toast('語彙辞典に足しました')}
+$('wordAdd').onclick=addWord;
+$('wordIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();addWord()}});
+$('wordReset').onclick=()=>{if(!confirm('足した言葉を消して、最初の言葉に戻しますか？'))return;words=structuredCloneSafe(DEFAULT_WORDS);saveWords();renderWords()};
+
+/* =========================================================
+   バックアップと復元
+   復元は「中身を一つずつ確かめてから」入れる。外への通信は使わない
+   ========================================================= */
+function blobToDataURL(b){return new Promise((ok,ng)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=()=>ng(r.error);r.readAsDataURL(b)})}
+function dataURLToBlob(s){
+  const m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(typeof s==='string'?s:'');if(!m)throw Error('写真の形式が正しくありません');
+  if(m[2].length>40*1024*1024)throw Error('写真が大きすぎます');
+  const bin=atob(m[2]),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:m[1]});
+}
+const str=(v,n)=>typeof v==='string'?v.slice(0,n):'';
+async function cleanAward(r){
+  if(!r||typeof r!=='object')throw Error('記録の形が正しくありません');
+  const d=new Date(r.date),image=dataURLToBlob(r.image);
+  /* 写真は描き直して、念のためもう一度中身を作り直す */
+  const p=await processPhoto(new File([image],'x.jpg',{type:image.type}));
+  return{id:(typeof r.id==='string'&&/^[\w-]{1,64}$/.test(r.id))?r.id:uuid(),no:Number.isInteger(r.no)&&r.no>0&&r.no<1e6?r.no:0,
+    date:isNaN(d)?new Date().toISOString():d.toISOString(),name:str(r.name,60).trim()||'名もなき賞',reason:str(r.reason,200),
+    comment:str(r.comment,200),prize:str(r.prize,100),color:FRAME_OK.has(r.color)?r.color:FRAMES[0][0],image:p.image,thumb:p.thumb};
+}
+async function backup(){
+  let list;try{list=await A.all()}catch(e){toast('記録を読めませんでした');return}
+  if(!list.length){toast('まだ記録がありません');return}
+  toast('バックアップを作っています…');
+  try{const out=[];for(const r of list){const{thumb,...rest}=r;out.push({...rest,image:await blobToDataURL(r.image)})}
+    const json=JSON.stringify({app:'nanka-jushou',version:3,words,awards:out});
+    const u=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+    const a=h('a',{href:u,download:'nanka-jushou-'+ymd(new Date()).replace(/-/g,'')+'.json'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000);
+    localStorage.setItem('lastBackup',String(Date.now()));renderVault();renderWall();toast('バックアップを保存しました')}
+  catch(e){toast('バックアップに失敗しました')}
+}
+$('exportBtn').onclick=backup;
+$('restoreIn').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(f.size>500*1024*1024){toast('ファイルが大きすぎます');return}
+  let data;try{data=JSON.parse(await f.text())}catch(err){toast('バックアップのファイルではないようです');return}
+  if(!data||!Array.isArray(data.awards)||![1,2,3].includes(data.version)){toast('このアプリのバックアップではないようです');return}
+  toast('戻しています…');let ok=0,ng=0;
+  for(const r of data.awards){try{await A.put(await cleanAward(r));ok++}catch(err){ng++}}
+  if(okWords(data.words)){words=data.words;saveWords();renderWords()}
+  renderVault();renderWall();toast(`${ok}件を戻しました`+(ng?`（${ng}件は読めませんでした）`:''));
+});
+$('wipeBtn').onclick=async()=>{
+  if(!confirm('飾ってある賞と、取り込み中の写真を、すべて消します。\n元には戻せません。よろしいですか？'))return;
+  if(!confirm('本当に消しますか？（バックアップを先に保存しておくことをおすすめします）'))return;
+  try{await A.clear();await T.clear()}catch(e){toast('消せませんでした');return}
+  [...urls.keys()].forEach(dropUrl);tray=[];sel=null;renderTray();renderVault();renderWall();toast('すべて消しました')};
+async function renderVault(){
+  let n=0;try{n=(await A.all()).length}catch(e){}$('vCount').textContent=n+'件';
+  const t=+localStorage.getItem('lastBackup');$('vLast').textContent=t?Math.floor((Date.now()-t)/864e5)+'日前':'まだありません';
+}
+
+/* =========================================================
+   画面の切り替え・シート
+   ========================================================= */
+function go(v){
+  ['vAward','vWall','vVault'].forEach(id=>$(id).classList.toggle('hidden',id!==v));
+  document.querySelectorAll('.nav button').forEach(b=>{if(b.dataset.v===v)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  if(v==='vWall')renderWall();if(v==='vVault'){renderVault();renderWords()}
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+function openS(id){$(id).classList.remove('hidden')}
+function closeS(id){$(id).classList.add('hidden')}
+document.querySelectorAll('.scrim').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]'))closeS(s.id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.scrim').forEach(s=>closeS(s.id));$('cere').classList.add('hidden')}});
+
+/* =========================================================
+   起動
+   ========================================================= */
+if(!localStorage.getItem('firstUse'))try{localStorage.setItem('firstUse',String(Date.now()))}catch(e){}
+renderFrames();$('name').value=makeName();renderTray();loadTray();
+</script>
+</body>
+</html>
