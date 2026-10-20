@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#FFF4E2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="このあと">
+<title>このあと、なにする。</title>
+<style>
+/* =========================================================
+   このあと、なにする。
+   明るいバラエティ番組のセット。司会の「まるちゃん」が予定を発表する。
+   仕事はオレンジとからし色、休みはミントとさくら色。
+   文字は丸ゴシックで、太く、やさしく。
+   ========================================================= */
+:root{
+  --bg:#FFF4E2;--dot:#FFE3BC;--main:#FF7043;--main2:#FF9A6B;--sub:#FFC93C;--accent:#2BB3A3;
+  --ink:#3A2E2A;--soft:#7A6A60;--line:#F0DCC2;--card:#FFFFFF;--ok:#2E9E6A;
+  --maru:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","M PLUS Rounded 1c","Kosugi Maru","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+:root[data-mode="rest"]{--bg:#EAF8F1;--dot:#CFEEDF;--main:#2EA67E;--main2:#5CC79F;--sub:#FFB3C6;--accent:#FF8A65}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;overflow-x:hidden}
+body{font-family:var(--maru);color:var(--ink);font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  background-color:var(--bg);background-image:radial-gradient(var(--dot) 18%,transparent 19%);background-size:26px 26px;transition:background-color .4s}
+button,input,select{font:inherit;color:inherit}
+input,select{font-size:16px}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+
+/* ---------- 看板 ---------- */
+.top{display:flex;align-items:center;justify-content:center;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 6px}
+.top .mascot{width:58px;height:58px;flex:none}
+.top h1{margin:0;font-size:24px;font-weight:800;letter-spacing:.04em;color:var(--ink)}
+.top h1 em{font-style:normal;color:var(--main)}
+.top p{margin:0;font-size:12px;color:var(--soft)}
+.valance{display:none}
+main{max-width:620px;margin:0 auto;padding:4px 14px calc(30px + env(safe-area-inset-bottom,0px))}
+
+/* ---------- ステッカー風のカード ---------- */
+.card{background:var(--card);border:2.5px solid var(--ink);border-radius:22px;padding:18px 16px;margin:14px 0;box-shadow:5px 5px 0 var(--ink)}
+.card h2{margin:0 0 12px;font-size:19px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:12px;height:12px;border-radius:50%;background:var(--main);box-shadow:16px 0 0 var(--sub),32px 0 0 var(--accent);margin-right:34px}
+.hint{font-size:12px;color:var(--soft);line-height:1.7;margin:8px 0 0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg);padding:5px;border-radius:999px;border:2px solid var(--ink)}
+.seg button{border:none;background:transparent;border-radius:999px;min-height:44px;font-weight:800;color:var(--soft)}
+.seg button[aria-pressed=true]{background:var(--main);color:#fff}
+.times{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:end;margin-top:16px}
+.times label{display:block;font-size:12px;color:var(--soft);font-weight:700}
+.times input{width:100%;min-width:0;border:2px solid var(--ink);background:var(--bg);font-size:26px;font-weight:800;padding:6px 8px;color:var(--ink);border-radius:14px;text-align:center}
+.times input:focus{outline:none;border-color:var(--main)}
+.times span{font-size:22px;font-weight:800;padding-bottom:10px}
+.lbl{display:block;font-size:12px;color:var(--soft);font-weight:700;margin:16px 0 6px}
+.btn{border:2px solid var(--ink);border-radius:999px;padding:9px 18px;min-height:46px;font-size:15px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#fff;color:var(--ink)}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.soft{background:var(--sub);color:var(--ink)}
+.btn.line{background:#fff}
+.btn.warn{color:#C4432F;border-color:#E9B4A8}
+.big{display:block;width:100%;margin:18px 0 4px;border:2.5px solid var(--ink);border-radius:18px;min-height:64px;font-size:21px;font-weight:800;letter-spacing:.12em;
+  color:#fff;background:var(--main);box-shadow:0 5px 0 var(--ink)}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+/* ---------- 予定表（時間割） ---------- */
+.slot{display:grid;grid-template-columns:3.4em 1fr auto;gap:10px;align-items:center;border-bottom:2px dashed var(--line);min-height:58px}
+.slot:last-child{border-bottom:none}
+.slot .tm{font-weight:800;font-size:15px;color:var(--soft);font-variant-numeric:tabular-nums;text-align:center;background:var(--bg);border-radius:10px;padding:3px 0}
+.slot .tm.hour{color:#fff;background:var(--ink)}
+.slot button.what{border:none;background:transparent;text-align:left;padding:10px 4px;min-height:52px;font-weight:800;font-size:18px;color:var(--ink);overflow-wrap:anywhere}
+.slot button.what.empty{font-weight:500;font-size:14px;color:#B9A898}
+.slot button.what.cont{font-size:14px;font-weight:500;color:#B9A898}
+.slot .same{border:2px solid var(--line);background:#fff;color:var(--soft);border-radius:12px;min-width:46px;min-height:42px;font-size:11px;font-weight:700;line-height:1.2;padding:2px 6px}
+.slot.now{background:linear-gradient(90deg,color-mix(in srgb,var(--sub) 45%,transparent),transparent);border-radius:12px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px}
+
+/* ---------- 本番 ---------- */
+.stage{text-align:center;padding:6px 0 10px}
+.clock{display:inline-block;font-size:14px;font-weight:700;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:4px 14px}
+.host{width:96px;height:96px;margin:14px auto -18px;position:relative;z-index:1}
+.board{background:#fff;border:3px solid var(--ink);border-radius:26px;box-shadow:6px 6px 0 var(--ink);padding:28px 18px 18px;position:relative}
+.nowlbl{display:inline-block;font-size:13px;font-weight:800;color:#fff;background:var(--main);border-radius:999px;padding:3px 14px;letter-spacing:.1em}
+.nowtxt{font-weight:800;font-size:clamp(30px,10vw,48px);line-height:1.3;color:var(--ink);margin:10px 0 4px;overflow-wrap:anywhere}
+.nowtxt.donex{color:#B9A898;text-decoration:line-through;text-decoration-color:var(--main);text-decoration-thickness:4px}
+.until{font-size:14px;color:var(--soft);font-weight:700}
+.bar{width:100%;height:16px;border-radius:999px;background:var(--bg);border:2px solid var(--ink);overflow:hidden;margin:14px auto 8px}
+.bar i{display:block;height:100%;width:0;transition:width 1s linear;
+  background:repeating-linear-gradient(-45deg,var(--sub) 0 10px,var(--main2) 10px 20px)}
+.left{font-size:34px;font-weight:800;color:var(--main);font-variant-numeric:tabular-nums;line-height:1.2}
+.left small{font-size:14px;font-weight:700;color:var(--soft);margin-left:4px}
+.stamp{display:inline-block;margin-top:8px;border:3px solid var(--ok);color:var(--ok);background:#fff;font-weight:800;padding:2px 16px;border-radius:999px;transform:rotate(-8deg);font-size:18px}
+.nextbox{margin:18px auto 0;background:var(--sub);border:2.5px solid var(--ink);border-radius:16px;padding:10px 14px;display:flex;gap:10px;align-items:center;text-align:left;box-shadow:4px 4px 0 var(--ink)}
+.nextbox .k{flex:none;font-size:12px;font-weight:800;background:var(--ink);color:#fff;border-radius:999px;padding:2px 10px}
+.nextbox .v{flex:1;min-width:0;font-weight:800;font-size:17px;overflow-wrap:anywhere}
+.nextbox .t{flex:none;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.runbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.runbtns .btn.gold{background:var(--main);color:#fff;min-width:170px;min-height:58px;font-size:19px;box-shadow:0 5px 0 var(--ink)}
+.runbtns .btn.gold:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.runbtns .btn.ghost{background:#fff;color:var(--ink);min-height:58px}
+.minor{display:flex;gap:4px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.minor button{border:none;background:transparent;color:var(--soft);font-size:13px;font-weight:700;min-height:40px;padding:0 10px;text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- 発表 ---------- */
+.reveal{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;
+  padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));background:var(--sub)}
+/* 回る集中線（バラエティのアレ） */
+.reveal::before{content:"";position:absolute;left:50%;top:50%;width:260vmax;height:260vmax;margin:-130vmax 0 0 -130vmax;
+  background:repeating-conic-gradient(var(--sub) 0 9deg,color-mix(in srgb,var(--main2) 55%,var(--sub)) 9deg 18deg);animation:spin 18s linear infinite;z-index:0}
+.reveal>*{position:relative;z-index:1}
+#vBody{display:flex;flex-direction:column;align-items:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reveal .tm{font-size:15px;font-weight:800;color:#fff;background:var(--ink);border-radius:999px;padding:4px 16px}
+.reveal .host{width:120px;height:120px;margin:16px auto 0}
+.roll{font-weight:800;font-size:clamp(30px,9vw,44px);color:var(--ink);margin:10px 0;min-height:1.4em}
+.roll span{display:inline-block;animation:shake .09s linear infinite alternate}
+@keyframes shake{from{transform:translateY(-3px) rotate(-3deg)}to{transform:translateY(3px) rotate(3deg)}}
+.don{display:inline-grid;place-items:center;width:min(70vw,300px);aspect-ratio:1.4;font-weight:800;font-size:clamp(52px,16vw,88px);color:#fff;background:var(--main);
+  clip-path:polygon(50% 0,61% 22%,85% 8%,78% 33%,100% 40%,80% 55%,95% 80%,68% 72%,58% 100%,45% 76%,20% 95%,24% 68%,0 62%,18% 46%,4% 22%,30% 26%);
+  animation:pop .35s cubic-bezier(.2,1.8,.4,1) both;text-shadow:0 4px 0 rgba(0,0,0,.2)}
+.kore{display:inline-block;font-size:18px;font-weight:800;color:#fff;background:var(--ink);border-radius:999px;padding:2px 16px;margin-top:4px}
+.plan{display:inline-block;max-width:92vw;font-weight:800;font-size:clamp(32px,10vw,54px);line-height:1.25;color:var(--ink);margin:12px 0 8px;overflow-wrap:anywhere;
+  background:#fff;border:3px solid var(--ink);border-radius:24px;padding:14px 24px;box-shadow:6px 6px 0 var(--ink);animation:pop .5s cubic-bezier(.2,1.6,.4,1) both}
+.pan{font-weight:800;font-size:clamp(22px,7vw,32px);color:var(--main);letter-spacing:.06em;animation:pop .4s .1s both;-webkit-text-stroke:1px #fff;paint-order:stroke}
+.rsub{display:inline-block;font-size:14px;font-weight:700;color:var(--ink);margin-top:8px;background:rgba(255,255,255,.75);border-radius:999px;padding:3px 14px}
+.tapskip{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;font-size:12px;font-weight:700;color:rgba(58,46,42,.6)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+.conf{position:absolute;top:-24px;width:10px;height:16px;pointer-events:none;animation:fall linear forwards;z-index:2}
+@keyframes fall{to{transform:translateY(115vh) rotate(800deg)}}
+
+/* ---------- 司会のまるちゃん ---------- */
+.mascot .mouth-o,.mascot .eye-shut{display:none}
+.mascot.roll .eye-open{display:none}.mascot.roll .eye-shut{display:inline}
+.mascot.happy .mouth-smile{display:none}.mascot.happy .mouth-o{display:inline}
+.mascot.roll{animation:wob .12s linear infinite alternate}
+.mascot.happy{animation:hop .5s cubic-bezier(.2,1.6,.4,1) 2}
+@keyframes wob{from{transform:rotate(-4deg)}to{transform:rotate(4deg)}}
+@keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.conf{display:none}}
+
+/* ---------- 予定を書く：マイ予定 ---------- */
+.gh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 6px}
+.gh .group{margin:0}
+.gh button{border:2px solid var(--ink);background:#fff;border-radius:999px;min-height:34px;padding:0 12px;font-size:12px;font-weight:800}
+.gh button[aria-pressed=true]{background:var(--ink);color:#fff}
+.chip.star{background:#FFF1C9;border-color:var(--ink)}
+.chip.edit{border-style:dashed;color:var(--soft)}
+.chip.edit::after{content:" ×";color:#C4432F;font-weight:800}
+.reg{width:100%;border:2px dashed var(--ink);background:#FFF8E6;border-radius:14px;min-height:44px;font-size:14px;font-weight:800;margin-top:-2px}
+.chip.add{border-style:dashed;color:var(--main);background:#fff}
+.addbox{display:flex;gap:6px;width:100%;margin-top:2px}
+.addbox input{flex:1;min-width:0;border:2px solid var(--main);background:#fff;border-radius:999px;padding:6px 14px;font-size:16px;font-weight:700;color:var(--ink)}
+.addbox input:focus{outline:none}
+.addbox button{flex:none;border:2px solid var(--ink);background:var(--main);color:#fff;border-radius:999px;padding:0 16px;font-weight:800;min-height:42px}
+.myempty{font-size:12px;color:var(--soft);padding:2px 2px 0}
+/* ---------- テンプレ ---------- */
+.tpls{display:flex;flex-direction:column;gap:10px}
+.tpl{display:flex;align-items:stretch;border:2.5px solid var(--ink);border-radius:18px;background:#fff;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+.tpl .use{flex:1;min-width:0;border:none;background:transparent;text-align:left;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.tpl .use b{font-size:17px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpl .use span{font-size:12px;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpl .tag{display:inline-block;font-size:11px;font-weight:800;color:#fff;border-radius:999px;padding:0 8px;margin-right:6px;vertical-align:1px}
+.tpl .tag.work{background:#FF7043}.tpl .tag.rest{background:#2EA67E}
+.tpl .del{flex:none;border:none;border-left:2px dashed var(--line);background:transparent;color:#B9A898;width:52px;font-size:12px;font-weight:700}
+.tplempty{font-size:13px;color:var(--soft);text-align:center;padding:10px 4px;border:2px dashed var(--line);border-radius:16px}
+.namein{width:100%;border:2px solid var(--ink);background:var(--bg);font-weight:800;font-size:18px;padding:8px 12px;border-radius:14px;color:var(--ink);margin:10px 0}
+.namein:focus{outline:none;border-color:var(--main)}
+.sug{display:flex;flex-wrap:wrap;gap:6px}
+/* ---------- 相方のくま ---------- */
+.top .bear{width:50px;height:50px;flex:none;margin-left:-16px}
+.top .mascot{width:50px!important;height:50px!important}
+.top h1{font-size:clamp(18px,5.4vw,24px);white-space:nowrap}
+.bear.roll{animation:sway .5s ease-in-out infinite alternate}
+.bear.happy{animation:hop .5s cubic-bezier(.2,1.6,.4,1) 2 .12s}
+.bear.idle{animation:breathe 3.2s ease-in-out infinite}
+@keyframes sway{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.03,.98)}}
+.duo{display:flex;align-items:flex-end;justify-content:center;gap:2px;position:relative;z-index:1;margin:14px auto -18px}
+.duo .host,.duo .bear{width:92px;height:92px;margin:0}
+.duo .bear{width:100px;height:100px}
+.bubble{position:relative;align-self:flex-start;max-width:46%;background:#fff;border:2.5px solid var(--ink);border-radius:16px;padding:6px 12px;font-size:14px;font-weight:800;text-align:left;margin-left:6px;box-shadow:3px 3px 0 var(--ink);animation:pop .3s cubic-bezier(.2,1.6,.4,1) both}
+.bubble::before{content:"";position:absolute;left:-10px;bottom:10px;border:6px solid transparent;border-right:9px solid var(--ink)}
+.bubble::after{content:"";position:absolute;left:-5px;bottom:11px;border:5px solid transparent;border-right:7px solid #fff}
+.bubble small{display:block;font-size:10px;color:var(--soft);font-weight:700}
+.reveal .duo{margin:14px auto 0}
+.reveal .duo .host,.reveal .duo .bear{width:118px;height:118px}
+.reveal .bubble{max-width:40vw}
+/* ---------- 予定を選ぶシート ---------- */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(58,46,42,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;color:var(--ink);width:100%;max-width:620px;max-height:90%;overflow:auto;border:2.5px solid var(--ink);border-bottom:none;border-radius:24px 24px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px));animation:up .2s ease-out}
+@media(min-width:660px){.scrim{align-items:center}.sheet{border-radius:24px;border-bottom:2.5px solid var(--ink)}}
+@keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 2px;font-size:18px;font-weight:800}
+.sheet .sub{font-size:12px;color:var(--soft)}
+.inrow{display:flex;gap:8px;margin:12px 0}
+.inrow input{flex:1;min-width:0;border:2px solid var(--ink);background:var(--bg);font-weight:800;font-size:18px;padding:8px 12px;color:var(--ink);border-radius:14px}
+.inrow input:focus{outline:none;border-color:var(--main)}
+.group{font-size:12px;color:var(--soft);font-weight:800;margin:14px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;padding:6px 14px;min-height:42px;font-size:15px;font-weight:700}
+.chip.mine{background:var(--sub)}
+
+/* ---------- 終演 ---------- */
+.fin .list{margin:14px auto 0;width:min(92vw,440px);text-align:left;background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:8px 14px;max-height:36vh;overflow:auto}
+.fin .li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:2px dashed var(--line);font-size:15px}
+.fin .li:last-child{border-bottom:none}
+.fin .li b{flex:1}
+.fin .li span{font-size:12px;color:var(--soft);font-variant-numeric:tabular-nums}
+.fin .li i{font-style:normal;color:var(--ok);font-weight:800;flex:none}
+
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header class="top">
+  <svg class="mascot " viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="112" rx="30" ry="5" fill="rgba(58,46,42,.15)"/>
+  <circle cx="60" cy="58" r="44" fill="#FFD9B8" stroke="#3A2E2A" stroke-width="4"/>
+  <path d="M30 34 Q60 6 90 34 Q76 26 60 28 Q44 26 30 34Z" fill="#3A2E2A"/>
+  <g class="eye-open" fill="#3A2E2A"><circle cx="45" cy="56" r="5"/><circle cx="75" cy="56" r="5"/><circle cx="47" cy="54" r="1.6" fill="#fff"/><circle cx="77" cy="54" r="1.6" fill="#fff"/></g>
+  <g class="eye-shut" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"><path d="M39 56 l7 -4 l-7 -4"/><path d="M81 56 l-7 -4 l7 -4"/></g>
+  <circle cx="36" cy="70" r="6" fill="#FF9A8A" opacity=".7"/><circle cx="84" cy="70" r="6" fill="#FF9A8A" opacity=".7"/>
+  <path class="mouth-smile" d="M50 72 Q60 82 70 72" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"/>
+  <ellipse class="mouth-o" cx="60" cy="77" rx="8" ry="9" fill="#C2413A" stroke="#3A2E2A" stroke-width="3"/>
+  <path d="M46 100 L60 94 L74 100 L74 108 L60 102 L46 108Z" fill="var(--main)" stroke="#3A2E2A" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="60" cy="101" r="3.5" fill="#3A2E2A"/>
+  <g transform="rotate(-25 100 80)"><rect x="96" y="76" width="7" height="26" rx="3" fill="#3A2E2A"/><circle cx="99.5" cy="72" r="8" fill="#9AA3AD" stroke="#3A2E2A" stroke-width="3"/></g>
+</svg>
+  <svg class="bear "  viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <pattern id="bf0" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#A8803F"/><circle cx="1.5" cy="1.5" r="1.1" fill="#8E6A32"/><circle cx="4" cy="3.8" r=".9" fill="#B9904E"/></pattern>
+    <pattern id="bc0" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#EDE6C8"/><circle cx="3" cy="3" r="1.6" fill="#E59AA4"/><circle cx="8" cy="7.5" r="1.4" fill="#8CC2B0"/></pattern>
+  </defs>
+  <ellipse cx="60" cy="114" rx="32" ry="5" fill="rgba(58,46,42,.15)"/>
+  <!-- からだ -->
+  <ellipse cx="60" cy="95" rx="31" ry="21" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- だいじに抱えた、布にくるまれたうさぎ -->
+  <path d="M42 96 Q44 82 60 84 Q76 82 78 96 Q76 110 60 110 Q44 110 42 96Z" fill="url(#bc0)" stroke="#3A2E2A" stroke-width="2.5"/>
+  <ellipse cx="52" cy="78" rx="3.6" ry="7.5" transform="rotate(-18 52 78)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <ellipse cx="64" cy="77" rx="3.6" ry="7.5" transform="rotate(14 64 77)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <circle cx="58" cy="89" r="10" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2.5"/>
+  <circle cx="55" cy="89" r="1.2" fill="#6B5A88"/><circle cx="61.5" cy="89" r="1.2" fill="#6B5A88"/>
+  <path d="M51 98 Q60 93 69 98" fill="none" stroke="#C9C08E" stroke-width="2"/>
+  <!-- うで -->
+  <ellipse cx="38" cy="93" rx="9" ry="14" transform="rotate(-28 38 93)" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/>
+  <ellipse cx="82" cy="93" rx="9" ry="14" transform="rotate(28 82 93)" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- みみ -->
+  <circle cx="31" cy="27" r="11" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/><circle cx="31" cy="28" r="5.5" fill="#8E6A32"/>
+  <circle cx="89" cy="27" r="11" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/><circle cx="89" cy="28" r="5.5" fill="#8E6A32"/>
+  <!-- あたま -->
+  <ellipse cx="60" cy="50" rx="33" ry="30" fill="url(#bf0)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- いつも閉じている、やさしい目 -->
+  <path d="M35 46 Q42 52 50 47" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <path d="M70 47 Q78 52 85 46" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <!-- 大きなマズル -->
+  <ellipse cx="60" cy="63" rx="18" ry="13.5" fill="#D9CFB7" stroke="#3A2E2A" stroke-width="2.5"/>
+  <path d="M47 66 Q52 62 56 64 M73 66 Q68 62 64 64 M50 71 Q55 69 58 70" fill="none" stroke="#B9AD92" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="60" cy="57" rx="7.5" ry="6.2" fill="#1E1A18"/>
+  <ellipse cx="57.5" cy="55" rx="2.4" ry="1.5" fill="#fff" opacity=".7"/>
+  <path class="bmouth" d="M54 69.5 Q60 73.5 66 69.5" fill="none" stroke="#3A2E2A" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="38" cy="58" r="5" fill="#FF9A8A" opacity=".45"/><circle cx="82" cy="58" r="5" fill="#FF9A8A" opacity=".45"/>
+</svg>
+  <div><h1>このあと、<em>なにする。</em></h1><p id="tagline">予定はじぶんで決める。発表はまるちゃんがやる。</p></div>
+</header>
+<div class="valance" aria-hidden="true"></div>
+
+<main>
+  <!-- ===== 準備 ===== -->
+  <section id="vSetup">
+    <div class="card">
+      <h2>テンプレから始める</h2>
+      <div class="tpls" id="tplList"></div>
+      <p class="hint">予定表を作ったあと「テンプレに保存」を押すと、ここに並びます。押すだけで、時間も予定もまるごと入ります。</p>
+    </div>
+    <div class="card">
+      <h2>はじめから作る</h2>
+      <div class="seg" id="modeSeg"><button data-m="work" aria-pressed="true">仕事モード</button><button data-m="rest" aria-pressed="false">休みモード</button></div>
+      <div class="times">
+        <div><label for="tStart">始まり</label><input type="time" id="tStart" step="1800"></div>
+        <span>〜</span>
+        <div><label for="tEnd">終わり</label><input type="time" id="tEnd" step="1800"></div>
+      </div>
+      <span class="lbl">区切り</span>
+      <div class="seg" id="stepSeg"><button data-s="30" aria-pressed="true">30分ごと</button><button data-s="60" aria-pressed="false">1時間ごと</button></div>
+      <label class="lbl" for="bearName">相方のくまの名前</label>
+      <input id="bearName" maxlength="12" autocomplete="off" placeholder="くまさん" style="width:100%;border:2px solid var(--ink);background:var(--bg);font-weight:800;font-size:18px;padding:8px 12px;border-radius:14px;color:var(--ink)">
+      <button class="big" id="makeBtn">時間割をつくる</button>
+      <p class="hint" id="setupHint"></p>
+    </div>
+  </section>
+
+  <!-- ===== 予定表 ===== -->
+  <section id="vPlan" class="hidden">
+    <div class="card">
+      <h2 id="planTitle">予定表</h2>
+      <div class="tools">
+        <button class="btn soft" id="loadTpl">テンプレを使う</button>
+        <button class="btn line" id="saveTpl">テンプレに保存</button>
+      </div>
+      <div id="slots"></div>
+      <p class="hint">枠を押して予定を入れます。「↓同じ」で、下の枠も同じ予定にできます。空いた枠は「自由時間」として発表します。</p>
+      <button class="big" id="goBtn">はじめる！</button>
+      <div class="btns"><button class="btn line" id="backSetup">時間を変える</button></div>
+    </div>
+  </section>
+
+  <!-- ===== 本番 ===== -->
+  <section id="vRun" class="hidden">
+    <div class="stage">
+      <div class="clock" id="rClock"></div>
+      <div class="duo">
+<svg class="mascot host" id="hostRun" viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="112" rx="30" ry="5" fill="rgba(58,46,42,.15)"/>
+  <circle cx="60" cy="58" r="44" fill="#FFD9B8" stroke="#3A2E2A" stroke-width="4"/>
+  <path d="M30 34 Q60 6 90 34 Q76 26 60 28 Q44 26 30 34Z" fill="#3A2E2A"/>
+  <g class="eye-open" fill="#3A2E2A"><circle cx="45" cy="56" r="5"/><circle cx="75" cy="56" r="5"/><circle cx="47" cy="54" r="1.6" fill="#fff"/><circle cx="77" cy="54" r="1.6" fill="#fff"/></g>
+  <g class="eye-shut" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"><path d="M39 56 l7 -4 l-7 -4"/><path d="M81 56 l-7 -4 l7 -4"/></g>
+  <circle cx="36" cy="70" r="6" fill="#FF9A8A" opacity=".7"/><circle cx="84" cy="70" r="6" fill="#FF9A8A" opacity=".7"/>
+  <path class="mouth-smile" d="M50 72 Q60 82 70 72" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"/>
+  <ellipse class="mouth-o" cx="60" cy="77" rx="8" ry="9" fill="#C2413A" stroke="#3A2E2A" stroke-width="3"/>
+  <path d="M46 100 L60 94 L74 100 L74 108 L60 102 L46 108Z" fill="var(--main)" stroke="#3A2E2A" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="60" cy="101" r="3.5" fill="#3A2E2A"/>
+  <g transform="rotate(-25 100 80)"><rect x="96" y="76" width="7" height="26" rx="3" fill="#3A2E2A"/><circle cx="99.5" cy="72" r="8" fill="#9AA3AD" stroke="#3A2E2A" stroke-width="3"/></g>
+</svg>
+<svg class="bear idle" id="bearRun" viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <pattern id="bf1" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#A8803F"/><circle cx="1.5" cy="1.5" r="1.1" fill="#8E6A32"/><circle cx="4" cy="3.8" r=".9" fill="#B9904E"/></pattern>
+    <pattern id="bc1" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#EDE6C8"/><circle cx="3" cy="3" r="1.6" fill="#E59AA4"/><circle cx="8" cy="7.5" r="1.4" fill="#8CC2B0"/></pattern>
+  </defs>
+  <ellipse cx="60" cy="114" rx="32" ry="5" fill="rgba(58,46,42,.15)"/>
+  <!-- からだ -->
+  <ellipse cx="60" cy="95" rx="31" ry="21" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- だいじに抱えた、布にくるまれたうさぎ -->
+  <path d="M42 96 Q44 82 60 84 Q76 82 78 96 Q76 110 60 110 Q44 110 42 96Z" fill="url(#bc1)" stroke="#3A2E2A" stroke-width="2.5"/>
+  <ellipse cx="52" cy="78" rx="3.6" ry="7.5" transform="rotate(-18 52 78)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <ellipse cx="64" cy="77" rx="3.6" ry="7.5" transform="rotate(14 64 77)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <circle cx="58" cy="89" r="10" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2.5"/>
+  <circle cx="55" cy="89" r="1.2" fill="#6B5A88"/><circle cx="61.5" cy="89" r="1.2" fill="#6B5A88"/>
+  <path d="M51 98 Q60 93 69 98" fill="none" stroke="#C9C08E" stroke-width="2"/>
+  <!-- うで -->
+  <ellipse cx="38" cy="93" rx="9" ry="14" transform="rotate(-28 38 93)" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/>
+  <ellipse cx="82" cy="93" rx="9" ry="14" transform="rotate(28 82 93)" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- みみ -->
+  <circle cx="31" cy="27" r="11" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/><circle cx="31" cy="28" r="5.5" fill="#8E6A32"/>
+  <circle cx="89" cy="27" r="11" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/><circle cx="89" cy="28" r="5.5" fill="#8E6A32"/>
+  <!-- あたま -->
+  <ellipse cx="60" cy="50" rx="33" ry="30" fill="url(#bf1)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- いつも閉じている、やさしい目 -->
+  <path d="M35 46 Q42 52 50 47" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <path d="M70 47 Q78 52 85 46" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <!-- 大きなマズル -->
+  <ellipse cx="60" cy="63" rx="18" ry="13.5" fill="#D9CFB7" stroke="#3A2E2A" stroke-width="2.5"/>
+  <path d="M47 66 Q52 62 56 64 M73 66 Q68 62 64 64 M50 71 Q55 69 58 70" fill="none" stroke="#B9AD92" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="60" cy="57" rx="7.5" ry="6.2" fill="#1E1A18"/>
+  <ellipse cx="57.5" cy="55" rx="2.4" ry="1.5" fill="#fff" opacity=".7"/>
+  <path class="bmouth" d="M54 69.5 Q60 73.5 66 69.5" fill="none" stroke="#3A2E2A" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="38" cy="58" r="5" fill="#FF9A8A" opacity=".45"/><circle cx="82" cy="58" r="5" fill="#FF9A8A" opacity=".45"/>
+</svg>
+<div class="bubble" id="bubRun"><small id="bubName"></small><span id="bubTxt"></span></div>
+      </div>
+      <div class="board">
+      <div class="nowlbl" id="rLbl">ただいまの予定</div>
+      <div class="nowtxt" id="rNow"></div>
+      <div class="until" id="rUntil"></div>
+      <div class="bar"><i id="rBar"></i></div>
+      <div class="left" id="rLeft"></div>
+      <div id="rStamp"></div>
+      </div>
+      <div class="nextbox" id="rNext"><span class="k">つぎ</span><span class="v" id="rNextV"></span><span class="t" id="rNextT"></span></div>
+      <div class="runbtns">
+        <button class="btn gold" id="doneBtn">終わった！</button>
+        <button class="btn ghost hidden" id="earlyBtn">次を今から始める</button>
+      </div>
+      <div class="minor">
+        <button id="replayBtn">もう一回発表</button>
+        <button id="soundBtn">音：オン</button>
+        <button id="editBtn">予定表を直す</button>
+        <button id="quitBtn">公演をやめる</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 予定を選ぶ -->
+<div class="scrim hidden" id="tsaveS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tsTitle">
+  <h3 id="tsTitle">テンプレに保存</h3>
+  <div class="sub" id="tsSub"></div>
+  <input class="namein" id="tsName" maxlength="20" placeholder="テンプレの名前" autocomplete="off" enterkeyhint="done" aria-label="テンプレの名前">
+  <div class="sug" id="tsSug"></div>
+  <div class="btns"><button class="btn dark" id="tsOk">保存する</button><button class="btn line" data-close>やめる</button></div>
+</div></div>
+<div class="scrim hidden" id="tuseS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tuTitle">
+  <h3 id="tuTitle">どのテンプレを使う？</h3>
+  <div class="sub">今の予定表は、選んだテンプレに置きかわります。</div>
+  <div class="tpls" id="tuList" style="margin-top:12px"></div>
+  <div class="btns"><button class="btn line" data-close>閉じる</button></div>
+</div></div>
+<div class="scrim hidden" id="pickS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <h3 id="pTitle"></h3>
+  <div class="sub" id="pSub"></div>
+  <div class="inrow"><input id="pIn" maxlength="24" placeholder="予定を書く" autocomplete="off" enterkeyhint="done" aria-label="予定"><button class="btn dark" id="pOk">決定</button></div>
+  <div id="pChips"></div>
+  <div class="btns"><button class="btn soft" id="pClear">空けておく</button><button class="btn line" data-close>閉じる</button></div>
+</div></div>
+
+<!-- 発表 -->
+<div class="reveal hidden" id="rev" role="dialog" aria-modal="true" aria-live="assertive">
+  <div class="tm" id="vTm"></div>
+  <div class="duo">
+  <svg class="mascot host" id="hostRev" viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="112" rx="30" ry="5" fill="rgba(58,46,42,.15)"/>
+  <circle cx="60" cy="58" r="44" fill="#FFD9B8" stroke="#3A2E2A" stroke-width="4"/>
+  <path d="M30 34 Q60 6 90 34 Q76 26 60 28 Q44 26 30 34Z" fill="#3A2E2A"/>
+  <g class="eye-open" fill="#3A2E2A"><circle cx="45" cy="56" r="5"/><circle cx="75" cy="56" r="5"/><circle cx="47" cy="54" r="1.6" fill="#fff"/><circle cx="77" cy="54" r="1.6" fill="#fff"/></g>
+  <g class="eye-shut" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"><path d="M39 56 l7 -4 l-7 -4"/><path d="M81 56 l-7 -4 l7 -4"/></g>
+  <circle cx="36" cy="70" r="6" fill="#FF9A8A" opacity=".7"/><circle cx="84" cy="70" r="6" fill="#FF9A8A" opacity=".7"/>
+  <path class="mouth-smile" d="M50 72 Q60 82 70 72" fill="none" stroke="#3A2E2A" stroke-width="4" stroke-linecap="round"/>
+  <ellipse class="mouth-o" cx="60" cy="77" rx="8" ry="9" fill="#C2413A" stroke="#3A2E2A" stroke-width="3"/>
+  <path d="M46 100 L60 94 L74 100 L74 108 L60 102 L46 108Z" fill="var(--main)" stroke="#3A2E2A" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="60" cy="101" r="3.5" fill="#3A2E2A"/>
+  <g transform="rotate(-25 100 80)"><rect x="96" y="76" width="7" height="26" rx="3" fill="#3A2E2A"/><circle cx="99.5" cy="72" r="8" fill="#9AA3AD" stroke="#3A2E2A" stroke-width="3"/></g>
+</svg>
+<svg class="bear " id="bearRev" viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <pattern id="bf2" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#A8803F"/><circle cx="1.5" cy="1.5" r="1.1" fill="#8E6A32"/><circle cx="4" cy="3.8" r=".9" fill="#B9904E"/></pattern>
+    <pattern id="bc2" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#EDE6C8"/><circle cx="3" cy="3" r="1.6" fill="#E59AA4"/><circle cx="8" cy="7.5" r="1.4" fill="#8CC2B0"/></pattern>
+  </defs>
+  <ellipse cx="60" cy="114" rx="32" ry="5" fill="rgba(58,46,42,.15)"/>
+  <!-- からだ -->
+  <ellipse cx="60" cy="95" rx="31" ry="21" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- だいじに抱えた、布にくるまれたうさぎ -->
+  <path d="M42 96 Q44 82 60 84 Q76 82 78 96 Q76 110 60 110 Q44 110 42 96Z" fill="url(#bc2)" stroke="#3A2E2A" stroke-width="2.5"/>
+  <ellipse cx="52" cy="78" rx="3.6" ry="7.5" transform="rotate(-18 52 78)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <ellipse cx="64" cy="77" rx="3.6" ry="7.5" transform="rotate(14 64 77)" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/>
+  <circle cx="58" cy="89" r="10" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2.5"/>
+  <circle cx="55" cy="89" r="1.2" fill="#6B5A88"/><circle cx="61.5" cy="89" r="1.2" fill="#6B5A88"/>
+  <path d="M51 98 Q60 93 69 98" fill="none" stroke="#C9C08E" stroke-width="2"/>
+  <!-- うで -->
+  <ellipse cx="38" cy="93" rx="9" ry="14" transform="rotate(-28 38 93)" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/>
+  <ellipse cx="82" cy="93" rx="9" ry="14" transform="rotate(28 82 93)" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- みみ -->
+  <circle cx="31" cy="27" r="11" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/><circle cx="31" cy="28" r="5.5" fill="#8E6A32"/>
+  <circle cx="89" cy="27" r="11" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/><circle cx="89" cy="28" r="5.5" fill="#8E6A32"/>
+  <!-- あたま -->
+  <ellipse cx="60" cy="50" rx="33" ry="30" fill="url(#bf2)" stroke="#3A2E2A" stroke-width="3"/>
+  <!-- いつも閉じている、やさしい目 -->
+  <path d="M35 46 Q42 52 50 47" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <path d="M70 47 Q78 52 85 46" fill="none" stroke="#2A2220" stroke-width="3" stroke-linecap="round"/>
+  <!-- 大きなマズル -->
+  <ellipse cx="60" cy="63" rx="18" ry="13.5" fill="#D9CFB7" stroke="#3A2E2A" stroke-width="2.5"/>
+  <path d="M47 66 Q52 62 56 64 M73 66 Q68 62 64 64 M50 71 Q55 69 58 70" fill="none" stroke="#B9AD92" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="60" cy="57" rx="7.5" ry="6.2" fill="#1E1A18"/>
+  <ellipse cx="57.5" cy="55" rx="2.4" ry="1.5" fill="#fff" opacity=".7"/>
+  <path class="bmouth" d="M54 69.5 Q60 73.5 66 69.5" fill="none" stroke="#3A2E2A" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="38" cy="58" r="5" fill="#FF9A8A" opacity=".45"/><circle cx="82" cy="58" r="5" fill="#FF9A8A" opacity=".45"/>
+</svg>
+<div class="bubble hidden" id="bubRev"><small class="bname"></small><span id="bubRevTxt"></span></div>
+  </div>
+  <div class="roll" id="vRoll"></div>
+  <div id="vBody"></div>
+  <div class="tapskip">画面を押すと、とばせます</div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   小道具
+   ========================================================= */
+const $=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function h(tag,props,...kids){const e=document.createElement(tag);if(props)for(const[k,v]of Object.entries(props)){
+  if(k==='style'){for(const[sk,sv]of Object.entries(v)){if(sk.startsWith('--'))e.style.setProperty(sk,sv);else e.style[sk]=sv}}
+  else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k==='text')e.textContent=v;else e.setAttribute(k,v)}
+  for(const c of kids)if(c!=null)e.append(c);return e}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2000)}
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const toMin=s=>{const m=/^(\d{1,2}):(\d{2})$/.exec(s||'');return m?(+m[1])*60+(+m[2]):null};
+const fromMin=n=>pad(Math.floor(n/60)%24)+':'+pad(n%60);
+const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60};
+const W='日月火水木金土';
+const sleep=ms=>new Promise(r=>setTimeout(r,reduce?0:ms));
+
+/* =========================================================
+   よく使う予定（モードごと）
+   ========================================================= */
+const SUGGEST={
+  work:{'集中する':['メール・連絡','書類づくり','見積','図面を見る','段取りを考える','電話をかける'],'動く':['現場','打合せ','外回り','片付け'],'ひと息':['休憩','お昼ごはん','コーヒー','ストレッチ']},
+  rest:{'家のこと':['洗濯','掃除','買い物','料理','洗い物','布団を干す'],'楽しむ':['ゲーム','動画','本を読む','散歩','お出かけ'],'休む':['昼寝','ぼーっとする','お風呂','ごはん','おやつ']}
+};
+/* 相方のくまのセリフ（ゆるく、やさしく） */
+const BEAR_SAY={
+  start:['できるよ〜','いってらっしゃ〜い','ゆっくりでいいよ〜','いっしょにがんばろ〜','ふぁいと〜'],
+  free:['のんびりしよ〜','ひと休みだね〜','ぼーっとしても いいんだよ'],
+  done:['えらい〜！','おつかれさま〜','さすが〜','すごいじゃ〜ん','ひと休みしよ〜'],
+  wait:['まだ時間あるよ〜','お茶でも のも〜'],
+  late:['あと少しだよ〜','もうひと息〜'],
+  fin:['きょうも えらかったね〜','ゆっくり休んでね〜','あしたも いっしょにね〜']
+};
+const pickS=a=>a[Math.floor(Math.random()*a.length)];
+const bearName=()=>clean(S.bearName)||'くまさん';
+let lastSayKey='',lastSay='';
+function say(key,force){if(!force&&key===lastSayKey)return;lastSayKey=key;const t=pickS(BEAR_SAY[key.split(':')[0]]);lastSay=t;
+  $('bubName').textContent=bearName();$('bubTxt').textContent=t;const b=$('bubRun');b.style.animation='none';void b.offsetWidth;b.style.animation=''}
+function bearHop(id){const b=$(id);if(!b)return;const base=b.getAttribute('class').replace(/ (happy|roll|idle)/g,'');b.setAttribute('class',base);void b.getBoundingClientRect();b.setAttribute('class',base+' happy');
+  setTimeout(()=>{if(id==='bearRun')b.setAttribute('class',base+' idle')},1300)}
+const FIN_TITLES={work:['本日の段取り大賞','定時までよくぞ大賞','仕事人功労賞','本日の業務完遂賞'],rest:['休日満喫大賞','本日のくつろぎ功労賞','洗濯物も喜んだで賞','ちゃんと休んだ大賞']};
+
+/* =========================================================
+   保存
+   ========================================================= */
+const KEY='konoato.v1';
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||typeof S!=='object')S={};
+S=Object.assign({addSug:{work:{},rest:{}},myItems:{work:[],rest:[]},hiddenSug:{work:[],rest:[]},templates:[],bearName:'くまさん',mode:'work',step:30,start:'',end:'17:30',date:'',slots:[],running:false,shown:-1,early:-1,done:{},sound:true,tpl:{},recent:{work:[],rest:[]},finished:false},S);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const clean=v=>typeof v==='string'?v.trim().slice(0,24):'';
+/* 前の「いつもの型」をテンプレに引っ越す */
+if(S.tpl&&typeof S.tpl==='object'){for(const m of ['work','rest']){const t=S.tpl[m];if(Array.isArray(t)&&t.length&&!S.templates.some(x=>x.from===m)){
+  const ts=t.map(x=>toMin(x.t)).filter(x=>x!=null);if(ts.length){const step=ts.length>1?Math.max(30,ts[1]-ts[0]):30;
+    S.templates.push({id:'t'+Date.now().toString(36)+m,from:m,name:m==='rest'?'いつもの休み':'いつもの仕事',mode:m,step,start:fromMin(Math.min(...ts)),end:fromMin(Math.max(...ts)+step),slots:t.map(x=>({t:x.t,text:clean(x.text)}))})}}}
+  delete S.tpl}
+if(!Array.isArray(S.templates))S.templates=[];
+
+
+/* =========================================================
+   音（その場で作る。外から何も読み込まない）
+   iPhoneは消音モードだと鳴りません
+   ========================================================= */
+let AC=null;
+function audioOn(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+  const b=AC.createBuffer(1,1,22050),s=AC.createBufferSource();s.buffer=b;s.connect(AC.destination);s.start(0)}catch(e){}}
+function noiseBuf(sec){const b=AC.createBuffer(1,AC.sampleRate*sec,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b}
+function drumroll(sec){if(!S.sound||!AC)return;const t0=AC.currentTime,nb=noiseBuf(.06);
+  for(let t=0;t<sec;t+=.045){const s=AC.createBufferSource();s.buffer=nb;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=900+Math.random()*300;f.Q.value=.8;
+    const g=AC.createGain();const v=.12+.35*(t/sec);g.gain.setValueAtTime(v,t0+t);g.gain.exponentialRampToValueAtTime(.001,t0+t+.05);s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t0+t)}}
+function hit(){if(!S.sound||!AC)return;const t=AC.currentTime;
+  const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.3);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.5);
+  const s=AC.createBufferSource();s.buffer=noiseBuf(1.2);const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=5000;const g2=AC.createGain();g2.gain.setValueAtTime(.35,t);g2.gain.exponentialRampToValueAtTime(.001,t+1.1);s.connect(f);f.connect(g2);g2.connect(AC.destination);s.start(t)}
+function fanfare(){if(!S.sound||!AC)return;const t0=AC.currentTime+.05;
+  /* ぱん・ぱか・ぱーん */
+  const notes=[[523.25,0,.16],[523.25,.2,.08],[659.25,.3,.08],[783.99,.42,.9]];
+  notes.forEach(([f,at,len])=>{[1,1.005].forEach(det=>{const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter();o.type='sawtooth';o.frequency.value=f*det;
+    lp.type='lowpass';lp.frequency.value=2600;g.gain.setValueAtTime(.0001,t0+at);g.gain.exponentialRampToValueAtTime(.13,t0+at+.02);g.gain.setValueAtTime(.13,t0+at+len-.05);g.gain.exponentialRampToValueAtTime(.0001,t0+at+len+.15);
+    o.connect(lp);lp.connect(g);g.connect(AC.destination);o.start(t0+at);o.stop(t0+at+len+.2)})})}
+function chime(){if(!S.sound||!AC)return;const t=AC.currentTime;[880,1318.5].forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;
+  g.gain.setValueAtTime(.0001,t+i*.12);g.gain.exponentialRampToValueAtTime(.25,t+i*.12+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.12+.6);o.connect(g);g.connect(AC.destination);o.start(t+i*.12);o.stop(t+i*.12+.7)})}
+
+/* 画面を消さない（対応している端末だけ） */
+let lock=null;
+async function keepAwake(){try{if('wakeLock' in navigator&&S.running&&document.visibilityState==='visible')lock=await navigator.wakeLock.request('screen')}catch(e){}}
+
+/* =========================================================
+   準備
+   ========================================================= */
+function applyMode(){document.documentElement.dataset.mode=S.mode;document.querySelector('meta[name=theme-color]').content=S.mode==='rest'?'#EAF8F1':'#FFF4E2';
+  $('tagline').textContent=S.mode==='rest'?'お休みの日は、まるちゃんと'+bearName()+'がのんびり進行。':'予定はじぶんで決める。発表はまるちゃんと'+bearName()+'。'}
+function renderSetup(){
+  renderTplList();
+  $('bearName').value=S.bearName||'';
+  $('modeSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.m===S.mode)));
+  $('stepSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.s===S.step)));
+  if(!$('tStart').value){const n=Math.floor(nowMin()/30)*30;$('tStart').value=fromMin(n)}
+  if(!$('tEnd').value)$('tEnd').value=S.end||'17:30';
+  const a=toMin($('tStart').value),b=toMin($('tEnd').value);
+  $('setupHint').textContent=(a!=null&&b!=null&&b>a)?`${Math.ceil((b-a)/S.step)}枠の予定表になります。`:'終わりは始まりより後の時間にしてください。';
+}
+$('bearName').addEventListener('input',e=>{S.bearName=clean(e.target.value);save();applyMode()});
+$('modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.mode=b.dataset.m;applyMode();renderSetup();save()};
+$('stepSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;S.step=+b.dataset.s;renderSetup();save()};
+['tStart','tEnd'].forEach(id=>$(id).addEventListener('input',renderSetup));
+$('makeBtn').onclick=()=>{
+  const a=toMin($('tStart').value),b=toMin($('tEnd').value);
+  if(a==null||b==null||b<=a){toast('終わりは始まりより後の時間にしてください');return}
+  if(b-a>24*60){toast('長すぎます');return}
+  const old=new Map((S.slots||[]).map(s=>[s.t,s.text]));
+  S.start=fromMin(a);S.end=fromMin(b);S.date=ymd(new Date());S.slots=[];
+  for(let m=a;m<b;m+=S.step)S.slots.push({t:fromMin(m),text:old.get(fromMin(m))||''});
+  S.running=false;S.shown=-1;S.early=-1;S.done={};S.finished=false;save();show('vPlan');
+};
+
+/* =========================================================
+   予定表
+   ========================================================= */
+function renderPlan(){
+  $('planTitle').textContent=`${S.mode==='rest'?'休みの日':'仕事の日'}の予定表　${S.start}〜${S.end}`;
+  const cur=Math.floor((nowMin()-toMin(S.start))/S.step);
+  $('slots').replaceChildren(...S.slots.map((s,i)=>{
+    const cont=i>0&&s.text&&s.text===S.slots[i-1].text;
+    return h('div',{class:'slot'+(i===cur?' now':'')},
+      h('span',{class:'tm'+(s.t.endsWith(':00')?' hour':''),text:s.t}),
+      h('button',{class:'what'+(s.text?(cont?' cont':''):' empty'),onclick:()=>openPick(i)},cont?'〃（つづき）':(s.text||'＋ 予定を入れる')),
+      i<S.slots.length-1&&s.text?h('button',{class:'same','aria-label':'下の枠も同じ予定にする',onclick:()=>{S.slots[i+1].text=s.text;save();renderPlan()}},'↓',h('br'),'同じ'):h('span'));
+  }));
+  $('loadTpl').disabled=!S.templates.length;
+}
+$('backSetup').onclick=()=>show('vSetup');
+/* ===== テンプレ ===== */
+function tplSummary(t){const items=[];let last='';t.slots.forEach(x=>{if(x.text&&x.text!==last)items.push(x.text);last=x.text});return items.join('→')||'（予定なし）'}
+function tplRow(t,listEl){
+  return h('div',{class:'tpl'},
+    h('button',{class:'use',onclick:()=>useTpl(t)},h('b',null,h('span',{class:'tag '+t.mode,text:t.mode==='rest'?'休み':'仕事'}),t.name),
+      h('span',{text:`${t.start}〜${t.end}　${tplSummary(t)}`})),
+    h('button',{class:'del','aria-label':t.name+'を消す',text:'消す',onclick:()=>{if(!confirm(`テンプレ「${t.name}」を消しますか？`))return;
+      S.templates=S.templates.filter(x=>x!==t);save();renderTplList();if(listEl)renderTuse();toast('消しました')}}));
+}
+function sortedTpls(){return [...S.templates].sort((a,b)=>(a.mode===S.mode?0:1)-(b.mode===S.mode?0:1)||(b.used||0)-(a.used||0))}
+function renderTplList(){const l=$('tplList');const ts=sortedTpls();
+  l.replaceChildren(...(ts.length?ts.map(t=>tplRow(t)):[h('div',{class:'tplempty',text:'まだテンプレはありません'})]))}
+function renderTuse(){const ts=sortedTpls();$('tuList').replaceChildren(...(ts.length?ts.map(t=>tplRow(t,true)):[h('div',{class:'tplempty',text:'まだテンプレはありません'})]))}
+function useTpl(t){
+  if(S.running&&!confirm('今の公演をやめて、このテンプレで作り直しますか？'))return;
+  if(!S.running&&S.slots.some(x=>x.text)&&!$('vPlan').classList.contains('hidden')&&!confirm('今の予定表を、このテンプレに置きかえますか？'))return;
+  S.mode=t.mode;S.step=t.step;S.start=t.start;S.end=t.end;S.date=ymd(new Date());
+  S.slots=t.slots.map(x=>({t:x.t,text:clean(x.text)}));S.running=false;S.shown=-1;S.early=-1;S.done={};S.finished=false;
+  t.used=Date.now();save();applyMode();$('tStart').value=t.start;$('tEnd').value=t.end;
+  document.querySelectorAll('.scrim').forEach(x=>x.classList.add('hidden'));show('vPlan');toast(`「${t.name}」を入れました`);
+}
+$('loadTpl').onclick=()=>{renderTuse();$('tuseS').classList.remove('hidden')};
+$('saveTpl').onclick=()=>{if(!S.slots.some(x=>x.text)){toast('先に予定を入れてください');return}
+  $('tsSub').textContent=`${S.mode==='rest'?'休み':'仕事'}モード　${S.start}〜${S.end}　${tplSummary({slots:S.slots})}`;
+  $('tsName').value='';
+  const sug=S.mode==='rest'?['のんびり休日','家事の日','おでかけの日']:['現場の日','事務所の日','いつもの仕事'];
+  $('tsSug').replaceChildren(...sug.map(n=>h('button',{class:'chip',text:n,onclick:()=>{$('tsName').value=n}})));
+  $('tsaveS').classList.remove('hidden');setTimeout(()=>$('tsName').focus(),80)};
+function saveTpl(){const name=clean($('tsName').value).slice(0,20);if(!name){toast('名前を入れてください');return}
+  const same=S.templates.find(x=>x.name===name);if(same&&!confirm(`「${name}」はもうあります。上書きしますか？`))return;
+  const t={id:same?same.id:'t'+Date.now().toString(36),name,mode:S.mode,step:S.step,start:S.start,end:S.end,slots:S.slots.map(x=>({t:x.t,text:x.text})),used:Date.now()};
+  if(same)Object.assign(same,t);else S.templates.push(t);
+  if(S.templates.length>50)S.templates.sort((a,b)=>(b.used||0)-(a.used||0)).length=50;
+  save();$('tsaveS').classList.add('hidden');renderPlan();toast(`テンプレ「${name}」に保存しました`)}
+$('tsOk').onclick=saveTpl;
+$('tsName').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();saveTpl()}});
+
+/* 予定を選ぶ */
+let pickIdx=-1;
+let pickEdit=false;
+function openPick(i){
+  pickIdx=i;pickEdit=false;addingTo=null;const s=S.slots[i],end=i+1<S.slots.length?S.slots[i+1].t:S.end;
+  $('pTitle').textContent=`${s.t}〜${end} の予定`;$('pSub').textContent='書くか、下から選んでください。';$('pIn').value=s.text||'';
+  renderPickChips();$('pickS').classList.remove('hidden');
+}
+const myList=()=>{S.myItems=S.myItems||{work:[],rest:[]};return S.myItems[S.mode]=S.myItems[S.mode]||[]};
+const hidList=()=>{S.hiddenSug=S.hiddenSug||{work:[],rest:[]};return S.hiddenSug[S.mode]=S.hiddenSug[S.mode]||[]};
+function addMine(t){t=clean(t);if(!t)return;const l=myList();if(l.includes(t)){toast('もうマイ予定に入っています');return}
+  l.push(t);const hd=hidList(),k=hd.indexOf(t);if(k>=0)hd.splice(k,1);save();renderPickChips();toast(`「${t}」をマイ予定に入れました`)}
+let addingTo=null;
+const addList=g=>{S.addSug=S.addSug||{work:{},rest:{}};const m=S.addSug[S.mode]=S.addSug[S.mode]||{};return m[g]=m[g]||[]};
+function addChip(g){
+  if(addingTo===g){const inp=h('input',{maxlength:'24',placeholder:'追加する予定',autocomplete:'off',enterkeyhint:'done','aria-label':g+'に追加する予定'});
+    const go=()=>{const t=clean(inp.value);if(!t){inp.focus();return}
+      if(g==='マイ予定'){addingTo=null;addMine(t);return}
+      const l=addList(g);if(l.includes(t)||(SUGGEST[S.mode][g]||[]).includes(t)){const hd=hidList(),k=hd.indexOf(t);if(k>=0){hd.splice(k,1);save()}addingTo=null;renderPickChips();toast('もう入っています');return}
+      l.push(t);save();addingTo=null;renderPickChips();toast(`「${t}」を追加しました`)};
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();go()}});
+    setTimeout(()=>inp.focus(),30);
+    return h('div',{class:'addbox'},inp,h('button',{text:'追加',onclick:go}))}
+  return h('button',{class:'chip add',text:'＋ 追加',onclick:()=>{addingTo=g;renderPickChips()}});
+}
+function renderPickChips(){
+  const box=$('pChips'),mine=myList(),hidden=new Set(hidList()),typed=clean($('pIn').value);
+  const chip=(t,cls,onDel)=>h('button',{class:'chip '+cls+(pickEdit?' edit':''),text:t,'aria-label':pickEdit?t+'を候補から消す':t,onclick:()=>{if(pickEdit)onDel();else setPick(t)}});
+  box.replaceChildren();
+  if(!pickEdit&&typed&&!mine.includes(typed))box.append(h('button',{class:'reg',text:`☆「${typed}」をマイ予定に入れる`,onclick:()=>addMine(typed)}));
+  box.append(h('div',{class:'gh'},h('div',{class:'group',text:'マイ予定'}),
+    h('button',{'aria-pressed':String(pickEdit),text:pickEdit?'編集おわり':'候補を消す',onclick:()=>{pickEdit=!pickEdit;addingTo=null;renderPickChips()}})));
+  box.append(h('div',{class:'chips'},...mine.map(t=>chip(t,'star',()=>{mine.splice(mine.indexOf(t),1);save();renderPickChips()})),pickEdit?null:addChip('マイ予定')));
+  const rec=(S.recent[S.mode]||[]).filter(t=>!mine.includes(t)).slice(0,8);
+  if(rec.length&&!pickEdit)box.append(h('div',{class:'group',text:'最近つかった予定'}),h('div',{class:'chips'},...rec.map(t=>chip(t,'mine',()=>{}))));
+  for(const[g,list]of Object.entries(SUGGEST[S.mode])){
+    const extra=addList(g),vis=list.filter(t=>!hidden.has(t)&&!mine.includes(t));
+    box.append(h('div',{class:'group',text:g}),h('div',{class:'chips'},
+      ...vis.map(t=>chip(t,'',()=>{hidList().push(t);save();renderPickChips()})),
+      ...extra.filter(t=>!mine.includes(t)).map(t=>chip(t,'',()=>{extra.splice(extra.indexOf(t),1);save();renderPickChips()})),
+      pickEdit?null:addChip(g)))}
+  if(pickEdit){box.append(h('p',{class:'hint',text:'押した候補が消えます。「最初の候補に戻す」で、最初の状態に戻せます（追加した候補も消えます。マイ予定は残ります）。'}),
+    h('div',{class:'btns'},h('button',{class:'btn line',text:'最初の候補に戻す',onclick:()=>{S.hiddenSug[S.mode]=[];if(S.addSug)S.addSug[S.mode]={};save();renderPickChips();toast('最初の候補に戻しました')}})))}
+}
+$('pIn').addEventListener('input',()=>{if(!pickEdit&&!addingTo)renderPickChips()});
+function setPick(t){t=clean(t);if(pickIdx<0)return;S.slots[pickIdx].text=t;
+  if(t){const r=S.recent[S.mode]||[];S.recent[S.mode]=[t,...r.filter(x=>x!==t)].slice(0,20)}
+  save();$('pickS').classList.add('hidden');renderPlan();if(S.running)tick(true)}
+$('pOk').onclick=()=>setPick($('pIn').value);
+$('pIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();setPick($('pIn').value)}});
+$('pClear').onclick=()=>setPick('');
+document.querySelectorAll('.scrim').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]'))s.classList.add('hidden')}));
+
+/* =========================================================
+   本番：同じ予定が続く枠はひとまとめにする
+   ========================================================= */
+function blocks(){const out=[];S.slots.forEach((s,i)=>{const t=s.text||'自由時間',last=out[out.length-1];
+  if(last&&last.text===t&&last.real===!!s.text)last.endIdx=i;else out.push({text:t,real:!!s.text,startIdx:i,endIdx:i})});
+  return out.map((b,k)=>({...b,k,start:toMin(S.slots[b.startIdx].t),end:b.endIdx+1<S.slots.length?toMin(S.slots[b.endIdx+1].t):toMin(S.end)}))}
+function currentBlock(B){const n=nowMin();let i=B.findIndex(b=>n>=b.start&&n<b.end);if(i<0)i=n<B[0].start?-1:B.length;
+  if(S.early>i&&S.early<B.length)i=S.early;return i}
+$('goBtn').onclick=()=>{
+  if(!S.slots.length)return;if(!S.slots.some(s=>s.text)){toast('一つは予定を入れてください');return}
+  audioOn();S.running=true;S.early=-1;S.finished=false;S.date=ymd(new Date());show('vRun');S.shown=-2;save();keepAwake();tick(false);
+};
+let revealing=false;
+function tick(silent){
+  if(!S.running||revealing)return;
+  if(S.date!==ymd(new Date())){S.running=false;save();show('vSetup');toast('日付が変わったので、新しい予定表を作りましょう');return}
+  const B=blocks(),i=currentBlock(B),n=nowMin(),d=new Date();
+  $('rClock').textContent=`${d.getMonth()+1}月${d.getDate()}日（${W[d.getDay()]}）　${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if(i!==S.shown){const prev=S.shown;S.shown=i;save();
+    if(i>=B.length){finale(prev>=0&&!silent);return}
+    if(i>=0&&!silent&&prev!==-3)reveal(B[i],B[i+1]);}
+  if(i<0){say('wait');$('rLbl').textContent='開演まで';$('rNow').textContent=fromMin(B[0].start)+' から';$('rNow').classList.remove('donex');
+    $('rUntil').textContent='最初の予定は、時間になったら発表します';const left=Math.ceil(B[0].start-n);$('rLeft').replaceChildren(String(left),h('small',{text:'分'}));
+    $('rBar').style.width='0%';$('rStamp').replaceChildren();setNext(B[0]);$('doneBtn').classList.add('hidden');$('earlyBtn').classList.remove('hidden');$('earlyBtn').textContent='今から始める';return}
+  if(i>=B.length)return;
+  const b=B[i],done=!!S.done[b.k];
+  {const lft=b.end-n;say(done?'done:'+b.k:(!b.real?'free:'+b.k:(lft<=5&&b.end-b.start>5?'late:'+b.k:'start:'+b.k)))}
+  $('rLbl').textContent=b.real?'ただいまの予定':'ただいまは';$('rNow').textContent=b.text;$('rNow').classList.toggle('donex',done);
+  $('rUntil').textContent=`${fromMin(b.start)} 〜 ${fromMin(b.end)}`;
+  const left=Math.max(0,b.end-n),tot=b.end-b.start,early=n<b.start;
+  if(early){$('rLeft').replaceChildren('前倒し中')}else $('rLeft').replaceChildren(left>=60?`${Math.floor(left/60)}時間${Math.ceil(left%60)}`:String(Math.ceil(left)),h('small',{text:left>=60?'分':'分のこり'}));
+  $('rBar').style.width=(early?0:Math.min(100,(1-left/tot)*100))+'%';
+  $('rStamp').replaceChildren(...(done?[h('span',{class:'stamp',text:'済'})]:[]));
+  setNext(B[i+1]);
+  $('doneBtn').classList.toggle('hidden',done||!b.real);
+  $('earlyBtn').classList.toggle('hidden',!(done||!b.real)||!B[i+1]);$('earlyBtn').textContent='次を今から始める';
+}
+function setNext(b){if(!b){$('rNextV').textContent='終演（おつかれさまの表彰式）';$('rNextT').textContent=S.end;return}$('rNextV').textContent=b.text;$('rNextT').textContent=fromMin(b.start)+'〜'}
+$('doneBtn').onclick=()=>{const B=blocks(),i=currentBlock(B);if(i<0||i>=B.length)return;S.done[B[i].k]=true;save();chime();
+  const hh=$('hostRun');hh.setAttribute('class','mascot host');void hh.getBoundingClientRect();hh.setAttribute('class','mascot host happy');bearHop('bearRun');
+  const nx=B[i+1];toast(nx?`次は「${nx.text}」（${fromMin(nx.start)}から）`:'おつかれさま！');tick(true)};
+$('earlyBtn').onclick=()=>{audioOn();const B=blocks(),i=currentBlock(B),nx=B[i+1]||(i<0?B[0]:null);if(!nx)return;S.early=nx.k;save();revealing=false;S.shown=nx.k;save();reveal(nx,B[nx.k+1]);};
+$('replayBtn').onclick=()=>{audioOn();const B=blocks(),i=currentBlock(B);if(i>=0&&i<B.length)reveal(B[i],B[i+1])};
+$('soundBtn').onclick=()=>{S.sound=!S.sound;save();audioOn();$('soundBtn').textContent='音：'+(S.sound?'オン':'オフ')};
+$('editBtn').onclick=()=>show('vPlan');
+$('quitBtn').onclick=()=>{if(!confirm('公演をやめて、準備の画面に戻りますか？\n（予定表は残ります）'))return;S.running=false;save();show('vSetup')};
+
+/* =========================================================
+   発表：どぅるるるる…ドン！ これ！ ぱんぱかぱーん
+   ========================================================= */
+let skip=false;
+$('rev').addEventListener('click',()=>{skip=true});
+async function step(ms){if(skip)return;await sleep(ms)}
+async function reveal(b,next){
+  revealing=true;skip=false;const R=$('rev');R.classList.remove('hidden');R.querySelectorAll('.conf').forEach(x=>x.remove());
+  $('vTm').textContent=`${fromMin(b.start)}　${b.real?'このあとの予定は':'このあとは'}`;$('vBody').replaceChildren();
+  const roll=$('vRoll');roll.replaceChildren(...[...'どぅるるるるる…'].map((c,i)=>h('span',{text:c,style:{animationDelay:(i*.03)+'s'}})));
+  const hr=$('hostRev');hr.setAttribute('class','mascot host roll');$('bearRev').setAttribute('class','bear roll');$('bubRev').classList.add('hidden');
+  drumroll(1.6);await step(1700);
+  roll.replaceChildren();hit();hr.setAttribute('class','mascot host happy');bearHop('bearRev');
+  $('bubRev').querySelector('.bname').textContent=bearName();$('bubRevTxt').textContent=pickS(BEAR_SAY[b.real?'start':'free']);$('bubRev').classList.remove('hidden');
+  $('vBody').replaceChildren(h('div',{class:'don',text:'ドン！'}));await step(650);
+  fanfare();confetti(R);
+  $('vBody').replaceChildren(h('div',{class:'kore',text:'これ！'}),h('div',{class:'plan',text:b.text}),h('div',{class:'pan',text:'ぱんぱかぱーん'}),
+    h('div',{class:'rsub',text:`${fromMin(b.start)}〜${fromMin(b.end)}`+(next?`　つぎは ${next.text}`:'')}));
+  skip=false;for(let w=0;w<(reduce?6:26)&&!skip;w++)await sleep(100);
+  R.classList.add('hidden');revealing=false;tick(true);
+}
+function confetti(box){if(reduce)return;const cols=['#FF7043','#FFC93C','#2BB3A3','#FF8FB1','#6C8CFF','#ffffff'];
+  for(let i=0;i<50;i++)box.append(h('i',{class:'conf',style:{left:Math.random()*100+'%',background:cols[i%cols.length],animationDuration:(2.2+Math.random()*2.4)+'s',animationDelay:(Math.random()*.5)+'s',borderRadius:Math.random()<.4?'50%':'1px'}}))}
+
+/* =========================================================
+   終演：本日の表彰
+   ========================================================= */
+async function finale(withShow){
+  S.running=false;S.finished=true;save();
+  const B=blocks().filter(b=>b.real),done=B.filter(b=>S.done[b.k]).length;
+  const R=$('rev');R.classList.remove('hidden');R.querySelectorAll('.conf').forEach(x=>x.remove());skip=false;
+  $('vTm').textContent='本日の公演はすべて終了しました';
+  $('bubRev').classList.add('hidden');
+  if(withShow){$('bearRev').setAttribute('class','bear roll');$('vRoll').replaceChildren(...[...'どぅるるるるる…'].map(c=>h('span',{text:c})));drumroll(1.4);await step(1500);hit()}
+  $('vRoll').replaceChildren();fanfare();confetti(R);$('hostRev').setAttribute('class','mascot host happy');bearHop('bearRev');
+  $('bubRev').querySelector('.bname').textContent=bearName();$('bubRevTxt').textContent=pickS(BEAR_SAY.fin);$('bubRev').classList.remove('hidden');
+  const title=FIN_TITLES[S.mode][Math.floor(Math.random()*FIN_TITLES[S.mode].length)];
+  $('vBody').replaceChildren(h('div',{class:'kore',text:'あなたに'}),h('div',{class:'plan',text:title}),h('div',{class:'pan',text:'ぱんぱかぱーん'}),
+    h('div',{class:'rsub',text:done?`${B.length}個の予定のうち、${done}個をやりとげました。`:'今日を乗り切ったこと自体が、受賞理由です。'}),
+    h('div',{class:'fin'},h('div',{class:'list'},...B.map(b=>h('div',{class:'li'},h('i',{text:S.done[b.k]?'✓':'・'}),h('b',{text:b.text}),h('span',{text:fromMin(b.start)}))))),
+    h('div',{class:'runbtns'},h('button',{class:'btn gold',text:'おつかれさま',onclick:e=>{e.stopPropagation();R.classList.add('hidden');show('vSetup')}})));
+  $('rev').querySelector('.tapskip').classList.add('hidden');
+}
+
+/* =========================================================
+   画面の切り替えと時計
+   ========================================================= */
+function show(v){['vSetup','vPlan','vRun'].forEach(id=>$(id).classList.toggle('hidden',id!==v));$('rev').querySelector('.tapskip').classList.remove('hidden');
+  if(v==='vSetup')renderSetup();if(v==='vPlan')renderPlan();if(v==='vRun'){$('soundBtn').textContent='音：'+(S.sound?'オン':'オフ');tick(true)}window.scrollTo({top:0})}
+setInterval(()=>{if(S.running&&!$('vRun').classList.contains('hidden'))tick(false);else if(!$('vPlan').classList.contains('hidden'))renderPlanNow()},1000);
+let lastPlanMin=-1;function renderPlanNow(){const m=Math.floor(nowMin());if(m!==lastPlanMin){lastPlanMin=m;renderPlan()}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){keepAwake();try{AC&&AC.state==='suspended'&&AC.resume()}catch(e){}if(S.running)tick(false)}});
+/* 画面を初めて触った時に音を使えるようにする（iPhoneの決まり） */
+document.addEventListener('pointerdown',audioOn,{once:true});
+
+/* =========================================================
+   起動
+   ========================================================= */
+applyMode();
+if(S.running&&S.date===ymd(new Date())){S.shown=S.shown<-1?-1:S.shown;show('vRun')}
+else if(S.slots.length&&S.date===ymd(new Date()))show('vPlan');
+else{S.running=false;show('vSetup')}
+</script>
+</body>
+</html>
