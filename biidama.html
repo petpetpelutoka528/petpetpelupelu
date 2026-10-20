@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#F4EFE6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ビー玉の瓶">
+<title>ビー玉の瓶</title>
+<style>
+/* =========================================================
+   ビー玉の瓶 ― 窓辺の昼の光
+   レースのカーテン越しの光。木の窓台。ガラス瓶を透けた光が、ビー玉の色を窓台に落とす。
+   ========================================================= */
+:root{
+  --wall:#F4EFE6;--ink:#3A342E;--soft:#7E756A;--line:rgba(120,100,80,.18);--glass:rgba(255,255,255,.62);--sky:#6F9CC6;--sky2:#4F7FAE;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP",serif;
+  --sans:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;overflow-x:hidden}
+body{font-family:var(--sans);color:var(--ink);font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;background:var(--wall)}
+button,input{font:inherit;color:inherit}
+input{font-size:16px}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px}
+.hidden{display:none!important}
+
+/* ---------- 窓辺の舞台 ---------- */
+.scene{position:relative;max-width:560px;margin:0 auto;overflow:hidden}
+.scene canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.title{position:absolute;right:16px;top:calc(14px + env(safe-area-inset-top,0px));text-align:right;pointer-events:none}
+.title h1{margin:0;font-family:var(--mincho);font-weight:600;font-size:20px;letter-spacing:.18em;color:#4A423A;text-shadow:0 1px 0 rgba(255,255,255,.8)}
+.title p{margin:0;font-size:11px;color:var(--soft);letter-spacing:.06em}
+.gear{position:absolute;right:10px;top:calc(62px + env(safe-area-inset-top,0px));border:none;background:rgba(255,255,255,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border-radius:999px;min-height:34px;padding:0 12px;font-size:12px;color:var(--soft)}
+/* 葉っぱの影が、ゆっくりゆれる */
+.leaves{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.55;filter:blur(3px);animation:sway 9s ease-in-out infinite alternate;transform-origin:85% 0}
+@keyframes sway{from{transform:rotate(-1.2deg) translateX(-4px)}to{transform:rotate(1.4deg) translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.leaves{animation:none}}
+
+/* ---------- 舞台の上の小さな操作 ---------- */
+.sceneBtn{position:absolute;border:1px solid rgba(255,255,255,.85);background:rgba(255,255,255,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-radius:999px;min-height:36px;padding:0 12px;font-size:12px;color:#5B5248;display:flex;align-items:center;gap:6px}
+.sceneBtn svg{width:16px;height:16px}
+.sceneBtn[aria-pressed=true]{background:rgba(111,156,198,.9);border-color:transparent;color:#fff}
+#tiltBtn{left:12px;bottom:calc(15% + 10px)}
+.emptyHint{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:58%;text-align:center;font-family:var(--mincho);font-size:13px;line-height:1.9;color:#7E756A;
+  pointer-events:none;background:rgba(255,255,255,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:14px;padding:10px 12px}
+/* ---------- 下の、指の届くところに操作をまとめる ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:15;padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,rgba(244,239,230,0),rgba(244,239,230,.92) 30%);pointer-events:none}
+.dock>div{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;pointer-events:auto}
+.round{flex:none;width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.95);background:rgba(255,255,255,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 6px 16px rgba(110,90,60,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:10px;color:#5B5248}
+.round svg{width:22px;height:22px}
+.round.hot{background:linear-gradient(180deg,#F0B074,#D27A3F);border-color:transparent;color:#fff;box-shadow:0 6px 16px rgba(190,100,40,.35)}
+.round:active{transform:scale(.96)}
+/* ---------- 下の、すりガラスの台 ---------- */
+main{max-width:560px;margin:-26px auto 0;padding:0 14px calc(110px + env(safe-area-inset-bottom,0px));position:relative}
+.card{background:var(--glass);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);border:1px solid rgba(255,255,255,.8);
+  border-radius:22px;box-shadow:0 10px 30px rgba(110,90,60,.12);padding:18px 16px}
+.total{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.total .nm{font-family:var(--mincho);font-size:13px;color:var(--soft);letter-spacing:.1em}
+.total b{display:block;font-family:var(--mincho);font-weight:600;font-size:40px;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.total b span{font-size:18px;margin-left:3px}
+.total .cnt{text-align:right;font-size:12px;color:var(--soft);line-height:1.6}
+.goal{height:6px;border-radius:3px;background:rgba(120,100,80,.12);overflow:hidden;margin-top:10px}
+.goal i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#9CC3E6,var(--sky))}
+.goaltxt{font-size:12px;color:var(--soft);margin-top:4px}
+.add{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;margin:0;border:none;border-radius:18px;min-height:60px;font-family:var(--mincho);font-weight:600;font-size:19px;letter-spacing:.14em;color:#fff;
+  background:linear-gradient(180deg,#86B0D8,var(--sky) 55%,var(--sky2));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 18px rgba(79,127,174,.35)}
+.add:active{transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 10px rgba(79,127,174,.35)}
+.linkrow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px;color:var(--soft)}
+.linkrow button{border:none;background:transparent;color:var(--sky2);font-size:13px;min-height:36px;padding:0}
+.tools{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tools button{border:1px solid rgba(255,255,255,.9);background:rgba(255,255,255,.55);border-radius:999px;min-height:40px;padding:0 14px;font-size:13px;color:var(--ink)}
+.full{margin-top:12px;font-size:13px;text-align:center;color:#5C6F86;background:rgba(220,234,246,.7);border-radius:12px;padding:8px 10px}
+.sec{margin-top:22px}
+.sec h2{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mincho);font-weight:600;font-size:14px;letter-spacing:.14em;color:var(--soft);margin:0 4px 8px}
+.sec h2 small{font-family:var(--sans);font-weight:400;font-size:12px;letter-spacing:0}
+.more{display:block;width:100%;border:none;background:transparent;color:var(--sky2);font-size:13px;min-height:40px}
+.rrow{display:flex;align-items:center;gap:12px;width:100%;border:none;background:transparent;border-bottom:1px solid var(--line);padding:9px 4px;text-align:left}
+.rrow:last-child{border-bottom:none}
+.rrow canvas{width:30px;height:30px;flex:none}
+.rrow .m{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .a{font-family:var(--mincho);font-variant-numeric:tabular-nums;font-size:16px}
+.rrow .d{font-size:11px;color:var(--soft);width:3.6em;text-align:right}
+.none{font-size:13px;color:var(--soft);text-align:center;padding:8px 0}
+/* 棚 */
+.shelf{position:relative;border-radius:18px;padding:14px 12px 0;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.2))}
+.jars{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;align-items:flex-end;padding:0 4px;border-bottom:14px solid #C49B70;box-shadow:0 8px 12px -8px rgba(90,60,30,.35)}
+.jars::-webkit-scrollbar{display:none}
+.mini{flex:none;border:none;background:transparent;padding:0;width:96px;text-align:center}
+.mini canvas{width:96px;height:auto;display:block}
+.mini b{display:block;font-family:var(--mincho);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini small{display:block;font-size:11px;color:var(--soft);margin-bottom:6px}
+
+/* ---------- シート ---------- */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(60,50,40,.28);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:rgba(252,250,246,.96);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:24px 24px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out;box-shadow:0 -10px 30px rgba(80,60,40,.12)}
+@media(min-width:600px){.scrim{align-items:center}.sheet{border-radius:24px}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 2px;font-family:var(--mincho);font-weight:600;font-size:19px}
+.sheet .sub{font-size:13px;color:var(--soft)}
+.preview{display:flex;align-items:center;gap:12px;margin:12px 0 0}
+.preview canvas{width:80px;height:80px;flex:none}
+.preview .tx{flex:1;font-size:13px;color:var(--soft);line-height:1.6}
+.preview button{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:36px;padding:0 12px;font-size:12px}
+.quick{display:flex;gap:6px;margin-top:8px}
+.quick button{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;min-height:40px;font-size:14px;font-variant-numeric:tabular-nums}
+.chips.presetrow{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;flex-wrap:nowrap;margin:0 -18px;padding:0 18px 2px}
+.presetrow::-webkit-scrollbar{display:none}
+.presetrow .chip{flex:none}
+.amt{display:flex;align-items:baseline;gap:6px;border-bottom:2px solid var(--ink);margin:16px 0 6px}
+.amt input{flex:1;min-width:0;border:none;background:transparent;font-family:var(--mincho);font-weight:600;font-size:42px;padding:2px 0;text-align:right;font-variant-numeric:tabular-nums}
+.amt input:focus{outline:none}
+.amt span{font-family:var(--mincho);font-size:20px}
+.lbl{display:block;font-size:12px;color:var(--soft);margin:14px 0 6px;letter-spacing:.06em}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 13px;min-height:42px;font-size:14px}
+.chip.edit{border-style:dashed;color:var(--soft)}
+.chip.edit::after{content:" ×";color:#B4473A}
+.chip.addp{border-style:dashed;color:var(--sky2)}
+.field{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px}
+.field:focus{outline:none;border-color:var(--sky)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:48px;padding:0 20px;font-size:15px}
+.btn.main{background:var(--sky);border-color:var(--sky);color:#fff;font-weight:700;flex:1}
+.btn.warn{color:#A2412C;border-color:#E5C3BA}
+.gh{display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px}
+.gh .lbl{margin:0}
+.gh button{border:1px solid var(--line);background:#fff;border-radius:999px;min-height:32px;padding:0 12px;font-size:12px}
+.loupe{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 0 6px}
+.loupe canvas{width:180px;height:180px}
+.loupe b{font-family:var(--mincho);font-size:32px;font-variant-numeric:tabular-nums}
+.loupe .m{font-size:15px}
+.loupe .d{font-size:12px;color:var(--soft)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;border:none;border-bottom:1px solid var(--line);padding:12px 0;width:100%;background:transparent;text-align:left;font-size:15px}
+.tog .sw{flex:none;width:44px;height:26px;border-radius:999px;background:#DDD4C6;position:relative;transition:background .2s}
+.tog .sw::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.tog[aria-pressed=true] .sw{background:var(--sky)}
+.tog[aria-pressed=true] .sw::after{transform:translateX(18px)}
+.pachi{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;background:radial-gradient(ellipse at 50% 20%,#4A3626,#22170F 70%);color:#FBF3E4;
+  padding:calc(8px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px));touch-action:none;-webkit-user-select:none;user-select:none}
+.pbar{display:flex;align-items:center;gap:8px;width:100%;max-width:440px}
+.pbar .ttl{flex:1;font-family:var(--mincho);font-size:18px;letter-spacing:.2em;text-align:center}
+.pbar button{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#FBF3E4;border-radius:999px;min-height:38px;padding:0 14px;font-size:13px}
+.pstat{display:flex;gap:10px;justify-content:center;margin:6px 0 4px;font-size:13px;color:#E8D9C0}
+.pstat b{font-family:var(--mincho);font-size:22px;color:#FFE6A8;margin:0 2px;font-variant-numeric:tabular-nums}
+.pboard{flex:1;min-height:0;width:100%;display:flex;justify-content:center;align-items:center}
+.pboard canvas{height:100%;max-width:100%;aspect-ratio:360/560;touch-action:none}
+.pctrl{display:flex;align-items:center;gap:14px;width:100%;max-width:440px;margin-top:8px}
+.pctrl .pw{flex:1}
+.pctrl .pw label{display:block;font-size:11px;color:#C9B89C;letter-spacing:.1em}
+.pctrl input[type=range]{width:100%;accent-color:#E8B04A}
+.fire{flex:none;width:96px;height:96px;border-radius:50%;border:none;font-family:var(--mincho);font-weight:600;font-size:17px;color:#3A2410;
+  background:radial-gradient(circle at 35% 30%,#FFF1C8,#E8B04A 55%,#A86F1C);box-shadow:0 6px 0 #6E4512,0 12px 24px rgba(0,0,0,.45),inset 0 -4px 10px rgba(0,0,0,.2)}
+.fire.on{transform:translateY(3px);box-shadow:0 3px 0 #6E4512,0 6px 14px rgba(0,0,0,.45),inset 0 -4px 10px rgba(0,0,0,.2)}
+.pmsg{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font-family:var(--mincho);font-weight:700;font-size:34px;color:#FFE6A8;text-shadow:0 3px 0 #6E4512,0 0 20px rgba(255,200,100,.6);
+  pointer-events:none;opacity:0;white-space:nowrap}
+.pmsg.show{animation:pm 1.1s ease-out}
+@keyframes pm{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:rgba(58,52,46,.92);color:#fff;padding:9px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="scene" id="scene">
+  <canvas id="cv" aria-label="窓辺のビー玉の瓶。ビー玉を押すと、くわしく見られます"></canvas>
+  <svg class="leaves" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+    <g fill="#5E7A55">
+      <path d="M318 40 q30 10 40 40 q-32 -2 -40 -40z"/><path d="M350 90 q28 18 30 48 q-30 -10 -30 -48z"/><path d="M300 110 q26 4 40 30 q-30 2 -40 -30z"/>
+      <path d="M262 180 q34 4 46 34 q-34 0 -46 -34z"/><path d="M330 200 q20 22 16 52 q-24 -18 -16 -52z"/><path d="M290 250 q30 10 38 40 q-30 -4 -38 -40z"/>
+      <path d="M356 300 q26 16 26 46 q-26 -12 -26 -46z"/><path d="M240 330 q34 0 50 26 q-34 6 -50 -26z"/><path d="M376 160 q20 20 14 50 q-20 -18 -14 -50z"/>
+      <path d="M200 400 q30 6 42 34 q-32 0 -42 -34z" opacity=".7"/><path d="M262 430 q24 14 26 42 q-26 -10 -26 -42z" opacity=".7"/>
+    </g>
+  </svg>
+  <div class="title"><h1>ビー玉の瓶</h1><p>使わなかったお金を、ビー玉にして飾る</p></div>
+  <button class="gear" id="setBtn">設定</button>
+  <button class="sceneBtn" id="tiltBtn" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="2" transform="rotate(-15 12 12)"/><path d="M3 18c2 2 4 3 7 3"/></svg>傾けて転がす</button>
+  <div class="emptyHint hidden" id="emptyHint">使わなかったお金を入れると、<br>ここにビー玉が落ちてきます</div>
+</div>
+
+<main>
+  <div class="card">
+    <div class="total"><div><div class="nm" id="jarName"></div><b id="sum">0<span>円</span></b></div><div class="cnt" id="count"></div></div>
+    <div id="goalWrap" class="hidden"><div class="goal"><i id="goalBar"></i></div><div class="goaltxt" id="goalTxt"></div></div>
+    <div class="full hidden" id="fullBox">瓶がいっぱいになってきました。「この瓶のこと」から、ふたをして棚にかざれます。</div>
+    <div class="linkrow"><span id="lastLine"></span><button id="jarBtn">この瓶のこと ›</button></div>
+  </div>
+  <section class="sec"><h2>入れたビー玉<small id="monthSum"></small></h2><div class="card" style="padding:6px 12px"><div id="recent"></div><button class="more hidden" id="moreBtn">もっと見る</button></div></section>
+  <section class="sec" id="shelfSec"><h2>棚にかざった瓶</h2><div class="shelf"><div class="jars" id="jars"></div></div></section>
+</main>
+<nav class="dock" aria-label="操作"><div>
+  <button class="round" id="shakeBtn" aria-label="瓶をゆらす"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8M9 4v3c-3 1-4 3-4 6v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5c0-3-1-5-4-6V4"/><path d="M2 10l2 1M2 15l2-1M22 10l-2 1M22 15l-2-1"/></svg>ゆらす</button>
+  <button class="add" id="addBtn">＋ 使わなかったお金</button>
+  <button class="round hot" id="pachiBtn" aria-label="ムカついたら、ビー玉を打つ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="15.5" cy="12" r="5"/><path d="M2 8.5h6M3 12h5M2 15.5h6"/></svg>打つ</button>
+</div></nav>
+
+<!-- お金を入れる -->
+<div class="scrim hidden" id="addS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="adTitle">
+  <h3 id="adTitle">使わなかったお金</h3>
+  <div class="sub">いくら使わずにすみましたか？</div>
+  <div class="preview"><canvas id="pvCan" width="128" height="128" aria-label="これから入るビー玉"></canvas><div class="tx">この玉が、瓶に入ります。<br>色と大きさは、毎回ランダムです。</div><button id="reroll">ほかの玉</button></div>
+  <label class="amt"><input id="amtIn" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="0" aria-label="金額"><span>円</span></label>
+  <div class="quick"><button data-q="100">＋100</button><button data-q="500">＋500</button><button data-q="1000">＋1,000</button><button data-q="0" aria-label="金額を消す">クリア</button></div>
+  <div class="gh"><span class="lbl">よくあるもの</span><button id="pEdit" aria-pressed="false">編集</button></div>
+  <div class="chips presetrow" id="presets"></div>
+  <label class="lbl" for="memoIn">何を使わなかった？（なくてもOK）</label>
+  <input class="field" id="memoIn" maxlength="40" autocomplete="off" placeholder="例）コンビニのコーヒーをがまん">
+  <div class="btns"><button class="btn" data-close>やめる</button><button class="btn main" id="dropBtn">瓶に入れる</button></div>
+</div></div>
+<div class="scrim hidden" id="presetS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="prTitle">
+  <h3 id="prTitle">よくあるものを足す</h3>
+  <label class="lbl" for="prName">名前</label><input class="field" id="prName" maxlength="16" autocomplete="off" placeholder="例）ランチを手作りに">
+  <label class="lbl" for="prAmt">金額（円）</label><input class="field" id="prAmt" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例）800">
+  <div class="btns"><button class="btn" data-close>やめる</button><button class="btn main" id="prOk">足す</button></div>
+</div></div>
+<div class="scrim hidden" id="loupeS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lpAmt">
+  <div class="loupe"><canvas id="lpCan" width="360" height="360"></canvas><b id="lpAmt"></b><div class="m" id="lpMemo"></div><div class="d" id="lpDate"></div></div>
+  <div class="btns"><button class="btn warn" id="lpDel">このビー玉を取り出す</button><button class="btn main" data-close>瓶にもどす</button></div>
+</div></div>
+<div class="scrim hidden" id="jarS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="jTitle">
+  <h3 id="jTitle">この瓶のこと</h3>
+  <label class="lbl" for="jName">ラベルの名前</label><input class="field" id="jName" maxlength="14" autocomplete="off" placeholder="使わなかったお金">
+  <label class="lbl" for="jGoal">目標の金額（なくてもOK）</label><input class="field" id="jGoal" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="例）30000">
+  <div class="btns"><button class="btn" id="jClose">ふたをして棚にかざる</button><button class="btn main" id="jSave">保存する</button></div>
+</div></div>
+<div class="scrim hidden" id="oldS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="oTitle">
+  <h3 id="oTitle"></h3><div class="sub" id="oSub"></div>
+  <div style="display:flex;justify-content:center;margin-top:10px"><canvas id="oCan" style="width:230px;height:auto"></canvas></div>
+  <div class="btns"><button class="btn warn" id="oDel">この瓶を片づける</button><button class="btn main" data-close>閉じる</button></div>
+</div></div>
+<div class="scrim hidden" id="setS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+  <h3 id="sTitle">設定</h3>
+  <button class="tog" id="sSound" aria-pressed="true">ガラスの音<span class="sw"></span></button>
+  <span class="lbl">記録のバックアップ</span>
+  <p class="sub">金額やメモは、このiPhoneのブラウザの中だけに保存されます。どこにも送られません。</p>
+  <div class="btns"><button class="btn" id="expBtn">バックアップを保存</button><label class="btn" style="position:relative;overflow:hidden;display:inline-flex;align-items:center">バックアップから戻す<input type="file" id="impIn" accept=".json,application/json" style="position:absolute;inset:0;opacity:0;font-size:16px"></label></div>
+  <div class="btns"><button class="btn main" data-close>閉じる</button></div>
+</div></div>
+<!-- ムカつきを書く -->
+<div class="scrim hidden" id="mukaS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mkTitle">
+  <h3 id="mkTitle">ムカつき台</h3>
+  <div class="sub" id="mkSub"></div>
+  <label class="lbl" for="mkIn">何にムカついてる？（ガラスの板に書きます。なくてもOK）</label>
+  <input class="field" id="mkIn" maxlength="14" autocomplete="off" placeholder="例）理不尽な電話">
+  <p class="sub" style="margin-top:8px">打ったビー玉は、終わったら全部瓶にもどります。書いた言葉は保存しません。</p>
+  <div class="btns"><button class="btn" data-close>やめる</button><button class="btn main" id="mkGo">打ちはじめる</button></div>
+</div></div>
+<!-- ムカつき台 -->
+<div class="pachi hidden" id="pachi" role="dialog" aria-modal="true" aria-label="ムカつき台">
+  <div class="pbar"><button id="pQuit">やめる</button><div class="ttl">ムカつき台</div><button id="pSound">音</button></div>
+  <div class="pstat"><span>のこり<b id="pLeft">0</b>発</span><span>入賞<b id="pWin">0</b></span><span>割った板<b id="pBreak">0</b></span></div>
+  <div class="pboard" id="pBoard"><canvas id="pcv"></canvas><div class="pmsg" id="pMsg"></div></div>
+  <div class="pctrl"><div class="pw"><label for="pPow">ハンドルの強さ</label><input type="range" id="pPow" min="0" max="100" value="62"></div><button class="fire" id="pFire" aria-label="押している間、玉を打つ">発射</button></div>
+</div>
+<div class="scrim hidden" id="resS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="rsTitle">
+  <h3 id="rsTitle">おつかれさまでした</h3>
+  <div class="sub" id="rsSub"></div>
+  <p style="font-family:var(--mincho);font-size:15px;margin:12px 0 0">ビー玉は、全部瓶にもどしておきました。</p>
+  <div class="btns"><button class="btn" id="rsAgain">もう一回</button><button class="btn main" id="rsOk">瓶にもどる</button></div>
+</div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+function h(tag,props,...kids){const e=document.createElement(tag);if(props)for(const[k,v]of Object.entries(props)){if(v==null||v===false)continue;
+  if(k==='style'){for(const[sk,sv]of Object.entries(v))e.style[sk]=sv}else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k==='text')e.textContent=v;else e.setAttribute(k,v)}
+  for(const c of kids)if(c!=null)e.append(c);return e}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2000)}
+const yen=n=>Math.round(n).toLocaleString('ja-JP');
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const str=(v,n)=>typeof v==='string'?v.trim().slice(0,n):'';
+const toNum=v=>{const n=Number(String(v).replace(/[^\d]/g,''));return Number.isFinite(n)?Math.min(n,99999999):0};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296}}
+const hex2=(c,a)=>{const n=parseInt(c.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`};
+
+/* =========================================================
+   保存（前の版のデータもそのまま使う）
+   ========================================================= */
+const KEY='biidama.v1';
+let D;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!D||typeof D!=='object')D={};
+D=Object.assign({jars:[],cur:'',presets:null,prefs:{sound:true},layout:0},D);
+if(!Array.isArray(D.jars))D.jars=[];
+D.jars.forEach(j=>{if(!Array.isArray(j.marbles))j.marbles=[];j.marbles.forEach(m=>{delete m._look;if(!Number.isFinite(m.seed))m.seed=(Math.random()*4294967295)>>>0;if(!Number.isFinite(m.amt))m.amt=0})});
+if(!Array.isArray(D.presets))D.presets=[{l:'☕ コーヒー',a:150},{l:'🍫 おやつ',a:200},{l:'🥤 自販機',a:160},{l:'🍱 ランチを手作り',a:800},{l:'🚶 タクシーをやめた',a:1200},{l:'🛍 衝動買いをやめた',a:3000},{l:'🍻 飲み会をパス',a:4000}];
+/* 瓶の形が変わったので、前の版の位置は使わず、上から注ぎなおす */
+if(D.layout!==2){D.jars.forEach(j=>j.marbles.forEach(m=>{delete m.x;delete m.y}));D.layout=2}
+function newJar(){const j={id:uid(),name:'',goal:0,createdAt:Date.now(),closedAt:0,marbles:[]};D.jars.push(j);D.cur=j.id;return j}
+let jar=D.jars.find(j=>j.id===D.cur&&!j.closedAt)||D.jars.find(j=>!j.closedAt)||newJar();D.cur=jar.id;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){toast('保存できませんでした')}}
+save();
+
+/* =========================================================
+   ビー玉の柄
+   色は「きれいに見える組み合わせ」の中からランダムに選ぶ
+   ========================================================= */
+const PALETTES=[
+ ['#1F7A8C','#7FC8D6','#E8F6F8'],['#F28F3B','#E0603F','#FFE3C9'],['#8E3B6E','#E072A4','#F7DCE9'],['#3E7C59','#9FD3A8','#EEF8E4'],
+ ['#3F7FD1','#9CCBF5','#F2F8FF'],['#D6A33A','#F2C36B','#FFF4D6'],['#6F62B0','#BBAEEA','#F2EEFF'],['#B3203A','#F28482','#FFE6E6'],
+ ['#21998B','#86DCCF','#EAFFFB'],['#AD6224','#E3AA55','#FFF0D9'],['#22355E','#6D8FCB','#E6EDF8'],['#2FA36B','#A6EBC5','#F4FFF9'],
+ ['#C2557A','#F5B3C8','#FFF0F5'],['#4A6E8E','#C9DCEB','#FFFFFF']
+];
+const TYPES=[['catseye',.32],['ramune',.16],['candy',.16],['opal',.12],['galaxy',.12],['solid',.12]];
+function hslHex(h,s,l){h=((h%360)+360)%360;s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return '#'+[f(0),f(8),f(4)].map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join('')}
+const lookCache=new Map();
+function look(m){const ck=m.id+':'+m.seed;if(lookCache.has(ck))return lookCache.get(ck);const r=rng(m.seed);let x=r(),a=0,type='catseye';for(const[t,w]of TYPES){a+=w;if(x<a){type=t;break}}
+  /* 色は完全にランダム：色相・あざやかさ・明るさを、その玉ごとに決める */
+  const h=r()*360,sat=45+r()*45,lit=38+r()*22,mode=r(),h2=mode<.4?h+150+r()*60:mode<.75?h+25+r()*35:h+r()*360;
+  const p=[hslHex(h,sat,lit),hslHex(h2,Math.min(95,sat+5),Math.min(80,lit+18)),hslHex(h+10,30+r()*30,90+r()*7)];
+  const size=11+Math.pow(r(),1.4)*19,L={type,p,r,size};lookCache.set(ck,L);return L}
+function radiusFor(amt,m){const v=m?look(m).size:14;return Number.isFinite(v)?v:14}
+
+const texCache=new Map(),shineCache=new Map();
+/* ---- 玉の中身（転がると一緒に回る） ---- */
+function body(m,px){
+  const key=m.id+':'+px;if(texCache.has(key))return texCache.get(key);
+  const c=document.createElement('canvas');c.width=c.height=px;const x=c.getContext('2d'),R=px/2,L=look(m),r=rng(m.seed^0x9e3779b9),[c1,c2,c3]=L.p;
+  x.save();x.beginPath();x.arc(R,R,R,0,Math.PI*2);x.clip();
+  const glassBase=(tint,a1,a2)=>{const g=x.createRadialGradient(R*.8,R*.75,R*.1,R,R,R);g.addColorStop(0,hex2(tint,a1));g.addColorStop(1,hex2(tint,a2));x.fillStyle=g;x.fillRect(0,0,px,px)};
+  if(L.type==='catseye'){
+    glassBase(c3,.35,.6);
+    x.translate(R,R);x.rotate(r()*Math.PI*2);const n=3+(r()<.4?1:0),cols=[c1,c2,c1,c2];
+    for(let k=0;k<2;k++)for(let i=0;i<n;i++){x.save();x.rotate(i*Math.PI*2/n+(k?.18:0));
+      const g=x.createLinearGradient(0,0,R*.95,0);g.addColorStop(0,hex2(cols[i],k?.35:.95));g.addColorStop(.7,hex2(cols[i],k?.25:.85));g.addColorStop(1,hex2(cols[i],0));
+      x.fillStyle=g;x.beginPath();x.moveTo(0,0);x.bezierCurveTo(R*.3,-R*.2*(k?.6:1),R*.7,-R*.16,R*.96,R*.02);x.bezierCurveTo(R*.66,R*.12,R*.3,R*.12,0,0);x.fill();
+      x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=Math.max(.5,px*.006);x.stroke();x.restore()}
+    x.setTransform(1,0,0,1,0,0)}
+  else if(L.type==='ramune'){
+    glassBase(c2,.18,.45);
+    for(let i=0;i<5+r()*7;i++){const a=r()*Math.PI*2,d=r()*R*.75,s=px*(.018+r()*.04),bx=R+Math.cos(a)*d,by=R+Math.sin(a)*d;
+      x.strokeStyle='rgba(255,255,255,.7)';x.lineWidth=Math.max(.6,px*.007);x.beginPath();x.arc(bx,by,s,0,Math.PI*2);x.stroke();
+      x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.arc(bx-s*.35,by-s*.35,s*.28,0,Math.PI*2);x.fill()}}
+  else if(L.type==='candy'){
+    glassBase(c3,.5,.7);x.translate(R,R);x.rotate(r()*Math.PI);const n=7+Math.floor(r()*4);
+    for(let i=0;i<n;i++){x.fillStyle=i%2?hex2(c1,.82):hex2(c2,.6);x.beginPath();const y0=-R+i*2*R/n,y1=y0+2*R/n;
+      x.moveTo(-R,y0);x.bezierCurveTo(-R*.3,y0+R*.45,R*.3,y0-R*.2,R,y0+R*.25);x.lineTo(R,y1+R*.25);x.bezierCurveTo(R*.3,y1-R*.2,-R*.3,y1+R*.45,-R,y1);x.fill()}
+    x.setTransform(1,0,0,1,0,0)}
+  else if(L.type==='opal'){
+    const g=x.createRadialGradient(R*.7,R*.6,R*.05,R,R,R);g.addColorStop(0,'#FFFFFF');g.addColorStop(1,c3);x.fillStyle=g;x.fillRect(0,0,px,px);
+    for(let i=0;i<6;i++){const hue=[c2,'#F7C6D9','#C6E9F7','#D9F7C6','#E6D6FF',c1][i%6],a=r()*Math.PI*2,d=r()*R*.6,rad=R*(.3+r()*.4);
+      const gg=x.createRadialGradient(R+Math.cos(a)*d,R+Math.sin(a)*d,0,R+Math.cos(a)*d,R+Math.sin(a)*d,rad);gg.addColorStop(0,hex2(hue,i===5?.35:.5));gg.addColorStop(1,hex2(hue,0));x.fillStyle=gg;x.fillRect(0,0,px,px)}}
+  else if(L.type==='galaxy'){
+    const g=x.createRadialGradient(R*.9,R*.8,R*.1,R,R,R);g.addColorStop(0,c1);g.addColorStop(1,'#141A33');x.fillStyle=g;x.fillRect(0,0,px,px);
+    for(let i=0;i<4;i++){const a=r()*Math.PI*2,d=r()*R*.6,rad=R*(.25+r()*.35),gg=x.createRadialGradient(R+Math.cos(a)*d,R+Math.sin(a)*d,0,R+Math.cos(a)*d,R+Math.sin(a)*d,rad);
+      gg.addColorStop(0,hex2(i%2?c2:'#E9A6FF',.45));gg.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gg;x.fillRect(0,0,px,px)}
+    for(let i=0;i<px*1.2;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*R*.95,s=Math.max(.5,px*(.004+r()*.012));x.fillStyle=r()<.2?hex2(c3,.95):'rgba(255,255,255,.9)';x.fillRect(R+Math.cos(a)*d,R+Math.sin(a)*d,s,s)}}
+  else{/* solid：乳白の地に、ゆるい流れ模様 */
+    const g=x.createRadialGradient(R*.7,R*.6,R*.05,R,R,R);g.addColorStop(0,c3);g.addColorStop(.6,c2);g.addColorStop(1,c1);x.fillStyle=g;x.fillRect(0,0,px,px);
+    for(let i=0;i<5;i++){x.strokeStyle=hex2(i%2?'#FFFFFF':c1,.28);x.lineWidth=px*(.03+r()*.05);x.beginPath();x.moveTo(r()*px,-2);x.bezierCurveTo(r()*px,px*.35,r()*px,px*.65,r()*px,px+2);x.stroke()}}
+  x.restore();texCache.set(key,c);return c;
+}
+/* ---- 光（転がっても動かない）：窓の映り込みと、反対側に集まる光 ---- */
+function shine(m,px){
+  const L=look(m),key=L.type+':'+L.p[1]+':'+px;if(shineCache.has(key))return shineCache.get(key);
+  const c=document.createElement('canvas');c.width=c.height=px;const x=c.getContext('2d'),R=px/2,clear=L.type!=='solid'&&L.type!=='opal';
+  x.beginPath();x.arc(R,R,R,0,Math.PI*2);x.clip();
+  /* ふちは濃く（ガラスの厚み） */
+  const rim=x.createRadialGradient(R*.95,R*.9,R*.55,R,R,R*1.02);rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(1,hex2(L.type==='galaxy'?'#0A0E1F':L.p[0],clear?.55:.38));x.fillStyle=rim;x.fillRect(0,0,px,px);
+  /* 光が集まる（右下） */
+  if(L.type!=='galaxy'){const cg=x.createRadialGradient(R*1.32,R*1.42,0,R*1.32,R*1.42,R*.62);cg.addColorStop(0,'rgba(255,255,255,'+(clear?.7:.35)+')');cg.addColorStop(.4,hex2(L.p[2],clear?.35:.15));cg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=cg;x.fillRect(0,0,px,px)}
+  /* 窓の映り込み（左上の小さな四角い窓） */
+  x.save();x.translate(R*.6,R*.52);x.rotate(-.18);const w=R*.5,hgt=R*.42;
+  const wg=x.createLinearGradient(0,-hgt/2,0,hgt/2);wg.addColorStop(0,'rgba(255,255,255,.95)');wg.addColorStop(1,'rgba(255,255,255,.55)');x.fillStyle=wg;
+  const rr=w*.22;x.beginPath();x.moveTo(-w/2+rr,-hgt/2);x.arcTo(w/2,-hgt/2,w/2,hgt/2,rr);x.arcTo(w/2,hgt/2,-w/2,hgt/2,rr);x.arcTo(-w/2,hgt/2,-w/2,-hgt/2,rr);x.arcTo(-w/2,-hgt/2,w/2,-hgt/2,rr);x.fill();
+  x.globalCompositeOperation='destination-out';x.fillStyle='rgba(0,0,0,.75)';x.fillRect(-Math.max(.6,px*.008),-hgt/2,Math.max(1.2,px*.016),hgt);x.fillRect(-w/2,-Math.max(.6,px*.008),w,Math.max(1.2,px*.016));x.restore();
+  const sg=x.createRadialGradient(R*.6,R*.52,0,R*.6,R*.52,R*.55);sg.addColorStop(0,'rgba(255,255,255,.35)');sg.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=sg;x.fillRect(0,0,px,px);
+  x.fillStyle='rgba(255,255,255,.95)';x.beginPath();x.arc(R*1.38,R*.62,Math.max(.8,R*.05),0,Math.PI*2);x.fill();
+  /* 輪郭 */
+  x.strokeStyle='rgba(40,40,50,.22)';x.lineWidth=Math.max(.6,px*.012);x.beginPath();x.arc(R,R,R-x.lineWidth/2,0,Math.PI*2);x.stroke();
+  shineCache.set(key,c);return c;
+}
+function drawMarble(x,m,cx,cy,r,ang,k){const px=Math.max(8,Math.ceil(r*2*k));x.save();x.translate(cx,cy);x.rotate(ang||0);x.drawImage(body(m,px),-r,-r,r*2,r*2);x.rotate(-(ang||0));x.drawImage(shine(m,px),-r,-r,r*2,r*2);x.restore()}
+
+/* =========================================================
+   舞台の寸法（単位は仮想の点。画面幅に合わせて拡大する）
+   ========================================================= */
+const SW=400,SH=600,SILL=508;            /* 窓台の天板の高さ */
+const JW=232,JH=300,JX=(SW-JW)/2,JB=SILL-6,JT=JB-JH,CR=34;   /* 瓶の内側の箱 */
+const cv=$('cv'),ctx=cv.getContext('2d');let dpr=1,S=1,bg=null;
+function fit(){dpr=Math.min(3,window.devicePixelRatio||1);const w=$('scene').clientWidth;S=w/SW;cv.width=Math.round(w*dpr);cv.height=Math.round(SH*S*dpr);cv.style.height=SH*S+'px';bg=paintBackground();draw()}
+
+/* ---- 背景（窓・カーテン・壁・窓台）は一度だけ描いておく ---- */
+function paintBackground(){
+  const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const x=c.getContext('2d');x.scale(S*dpr,S*dpr);
+  /* 壁 */
+  let g=x.createLinearGradient(0,0,SW,SH);g.addColorStop(0,'#FBF8F2');g.addColorStop(1,'#EDE4D6');x.fillStyle=g;x.fillRect(0,0,SW,SH);
+  const rr=rng(7);for(let i=0;i<2600;i++){x.fillStyle=`rgba(${rr()<.5?255:150},${rr()<.5?250:130},${rr()<.5?240:110},.05)`;x.fillRect(rr()*SW,rr()*SH,1.2,1.2)}
+  /* 窓 */
+  const WX=18,WY=-10,WW=232,WH=330;
+  x.fillStyle='#EAE3D8';x.fillRect(WX-12,WY,WW+24,WH+14);
+  g=x.createLinearGradient(0,WY,0,WY+WH);g.addColorStop(0,'#CFE3F2');g.addColorStop(.55,'#EEF5F8');g.addColorStop(1,'#FFFFFF');x.fillStyle=g;x.fillRect(WX,WY,WW,WH);
+  /* 遠くの木々（ぼんやり） */
+  for(let i=0;i<14;i++){const cx=WX+rr()*WW,cy=WY+WH*.62+rr()*WH*.3,rad=18+rr()*30,gg=x.createRadialGradient(cx,cy,0,cx,cy,rad);gg.addColorStop(0,`rgba(${120+rr()*40},${165+rr()*30},${120+rr()*30},.35)`);gg.addColorStop(1,'rgba(160,190,150,0)');x.fillStyle=gg;x.fillRect(cx-rad,cy-rad,rad*2,rad*2)}
+  /* 窓枠と桟 */
+  x.strokeStyle='#F7F3EC';x.lineWidth=10;x.strokeRect(WX,WY,WW,WH);x.lineWidth=6;x.beginPath();x.moveTo(WX+WW/2,WY);x.lineTo(WX+WW/2,WY+WH);x.moveTo(WX,WY+WH*.48);x.lineTo(WX+WW,WY+WH*.48);x.stroke();
+  x.strokeStyle='rgba(150,130,110,.25)';x.lineWidth=1;x.strokeRect(WX-5,WY-5,WW+10,WH+10);
+  /* レースのカーテン（右から少しかかる） */
+  const CX=WX+WW-58;g=x.createLinearGradient(CX,0,CX+92,0);for(let i=0;i<=8;i++)g.addColorStop(i/8,`rgba(255,255,255,${i%2?.55:.82})`);
+  x.fillStyle=g;x.beginPath();x.moveTo(CX+6,WY);x.lineTo(CX+96,WY);x.lineTo(CX+96,WY+WH+20);x.bezierCurveTo(CX+70,WY+WH+8,CX+40,WY+WH+22,CX-6,WY+WH+14);x.bezierCurveTo(CX,WY+WH*.6,CX-4,WY+WH*.3,CX+6,WY);x.fill();
+  x.strokeStyle='rgba(200,190,175,.35)';x.lineWidth=.8;for(let i=0;i<8;i++){x.beginPath();x.moveTo(CX+12+i*10,WY);x.bezierCurveTo(CX+10+i*10,WY+WH*.5,CX+8+i*10,WY+WH*.8,CX+4+i*11,WY+WH+14);x.stroke()}
+  /* 差し込む光の帯 */
+  x.save();x.globalCompositeOperation='lighter';
+  [[40,.10],[120,.08],[200,.06]].forEach(([o,a])=>{const lg=x.createLinearGradient(WX+o,WY+WH,WX+o+260,SH);lg.addColorStop(0,`rgba(255,246,225,${a})`);lg.addColorStop(1,'rgba(255,246,225,0)');
+    x.fillStyle=lg;x.beginPath();x.moveTo(WX+o,WY+WH*.2);x.lineTo(WX+o+60,WY+WH*.2);x.lineTo(WX+o+300,SH);x.lineTo(WX+o+200,SH);x.closePath();x.fill()});x.restore();
+  /* 窓台（木） */
+  g=x.createLinearGradient(0,SILL-6,0,SH);g.addColorStop(0,'#E2C49C');g.addColorStop(.12,'#D4AE80');g.addColorStop(1,'#B98D5F');x.fillStyle=g;x.fillRect(0,SILL-6,SW,SH-SILL+6);
+  x.strokeStyle='rgba(120,80,40,.12)';x.lineWidth=1;for(let i=0;i<18;i++){const y=SILL+4+i*5.5+rr()*3;x.beginPath();x.moveTo(0,y);for(let X=0;X<=SW;X+=20)x.lineTo(X,y+Math.sin(X/40+i)*1.6);x.stroke()}
+  x.fillStyle='rgba(255,255,255,.45)';x.fillRect(0,SILL-6,SW,2);
+  x.fillStyle='rgba(90,60,30,.25)';x.fillRect(0,SH-26,SW,26);x.fillStyle='rgba(255,255,255,.25)';x.fillRect(0,SH-26,SW,1.5);
+  /* 窓台に落ちる日だまり */
+  g=x.createLinearGradient(30,SILL,330,SH);g.addColorStop(0,'rgba(255,248,228,.55)');g.addColorStop(1,'rgba(255,248,228,0)');x.fillStyle=g;x.beginPath();x.moveTo(10,SILL-4);x.lineTo(250,SILL-4);x.lineTo(360,SH-26);x.lineTo(60,SH-26);x.closePath();x.fill();
+  /* 小さな鉢植え（右） */
+  x.save();x.translate(338,SILL-6);x.fillStyle='rgba(90,60,30,.22)';x.beginPath();x.ellipse(18,2,26,4,0,0,Math.PI*2);x.fill();
+  g=x.createLinearGradient(-6,0,40,0);g.addColorStop(0,'#C9744B');g.addColorStop(1,'#A6593A');x.fillStyle=g;x.beginPath();x.moveTo(-4,-34);x.lineTo(40,-34);x.lineTo(34,0);x.lineTo(2,0);x.closePath();x.fill();
+  x.fillStyle='#D98A5E';x.fillRect(-6,-38,48,7);
+  [[-14,-74,-.5],[6,-86,-.1],[24,-80,.35],[38,-64,.8],[-6,-58,-.9],[16,-62,.1]].forEach(([lx,ly,rot])=>{x.save();x.translate(18,-38);x.rotate(rot);x.fillStyle=rot>0?'#6E9A5E':'#5E8A50';x.beginPath();x.ellipse(0,(ly+38)/1.6,7,22,0,0,Math.PI*2);x.fill();x.restore()});
+  x.restore();
+  return c;
+}
+
+/* =========================================================
+   物理（瓶の中で、転がって積もる）
+   ========================================================= */
+let balls=[];
+function buildBalls(pour){const old=new Map(balls.map(b=>[b.m.id,b]));
+  balls=jar.marbles.map((m,i)=>{const o=old.get(m.id);if(o){o.m=m;return o}const r=radiusFor(m.amt,m);let x,y;
+    if(typeof m.x==='number'){x=Math.max(r,Math.min(JW-r,m.x));y=Math.max(-200,Math.min(JH-r,m.y))}else{x=r+Math.random()*(JW-2*r);y=pour?r+8+Math.random()*JH*.55:JH-r-Math.random()*40}
+    return{m,r,x,y,px:x,py:y,a:m.ang||0}})}
+let gx=0,gy=1;
+function step(){
+  const G=1000,dt=1/60,sub=3,h2=(dt/sub)*(dt/sub);let moved=0,hits=0;
+  for(let s=0;s<sub;s++){
+    for(const b of balls){const vx=(b.x-b.px)*.991,vy=(b.y-b.py)*.991;b.px=b.x;b.py=b.y;b.x+=vx+gx*G*h2;b.y+=vy+gy*G*h2}
+    for(let k=0;k<3;k++){
+      for(let i=0;i<balls.length;i++){const a=balls[i];for(let j=i+1;j<balls.length;j++){const c=balls[j],dx=c.x-a.x,dy=c.y-a.y,rr=a.r+c.r,d2=dx*dx+dy*dy;
+        if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2),o=(rr-d)/2,nx=dx/d,ny=dy/d;
+          if(k===0&&s===0){const rv=((c.x-c.px)-(a.x-a.px))*nx+((c.y-c.py)-(a.y-a.py))*ny;if(rv<-1)hits=Math.max(hits,-rv)}
+          a.x-=nx*o;a.y-=ny*o;c.x+=nx*o;c.y+=ny*o}}}
+      for(const b of balls){const r=b.r;let hit=0;
+        if(b.x<r){hit=Math.abs(b.x-b.px);b.x=r}if(b.x>JW-r){hit=Math.abs(b.x-b.px);b.x=JW-r}if(b.y<r){b.y=r}
+        if(b.y>JH-r){hit=Math.max(hit,Math.abs(b.y-b.py));b.y=JH-r}
+        for(const cx of [CR,JW-CR]){const cy=JH-CR;if(b.y>cy&&((cx===CR&&b.x<cx)||(cx!==CR&&b.x>cx))){const dx=b.x-cx,dy=b.y-cy,d=Math.hypot(dx,dy),lim=CR-r;if(lim>0&&d>lim){hit=Math.max(hit,d-lim);b.x=cx+dx/d*lim;b.y=cy+dy/d*lim}}}
+        if(k===0&&s===0&&hit>1.3)hits=Math.max(hits,hit)}
+    }
+  }
+  for(const b of balls){const dx=b.x-b.px,dy=b.y-b.py;moved=Math.max(moved,Math.abs(dx)+Math.abs(dy));b.a+=dx/b.r}
+  if(hits)clink(Math.min(1,hits/9));return moved;
+}
+
+/* =========================================================
+   描く
+   ========================================================= */
+function jarOutline(x,ox,oy,k){/* 瓶の外形（ガラスの外側） */
+  const L=ox-6*k,R=ox+(JW+6)*k,T=oy,B=oy+(JH+8)*k,nk=JW*.58*k,nl=ox+(JW*k-nk)/2,nr=nl+nk,sh=34*k;
+  x.beginPath();x.moveTo(nl,T-30*k);x.lineTo(nl,T-10*k);x.bezierCurveTo(nl,T+4*k,L,T+6*k,L,T+sh);x.lineTo(L,B-CR*k);x.quadraticCurveTo(L,B,L+CR*k,B);x.lineTo(R-CR*k,B);x.quadraticCurveTo(R,B,R,B-CR*k);
+  x.lineTo(R,T+sh);x.bezierCurveTo(R,T+6*k,nr,T+4*k,nr,T-10*k);x.lineTo(nr,T-30*k);x.closePath();return{L,R,T,B,nl,nr}}
+function draw(){
+  if(!bg)return;ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(bg,0,0);ctx.setTransform(S*dpr,0,0,S*dpr,0,0);
+  drawJar(ctx,JX,JT,1,balls,S*dpr,true);
+}
+/* 瓶ひとつを描く（棚の小さい瓶にも使う） */
+function drawJar(x,ox,oy,k,list,pxk,big){
+  const o=jarOutline(x,ox,oy,k);
+  /* 窓台に落ちる影と、ビー玉の色の光 */
+  x.save();x.fillStyle='rgba(110,80,50,.20)';x.beginPath();x.moveTo(o.L+10*k,o.B);x.lineTo(o.R-6*k,o.B);x.lineTo(o.R+70*k,o.B+30*k);x.lineTo(o.L+60*k,o.B+30*k);x.closePath();x.fill();
+  x.globalCompositeOperation=big?'multiply':'source-over';
+  for(const b of list){const L=look(b.m),hgt=JH-b.y,cx=ox+(b.x+hgt*.3)*k+40*k,cy=o.B+(8+hgt*.07)*k,rad=b.r*1.5*k,g=x.createRadialGradient(cx,cy,0,cx,cy,rad);
+    g.addColorStop(0,hex2(L.p[1],.35));g.addColorStop(1,hex2(L.p[1],0));x.fillStyle=g;x.beginPath();x.ellipse(cx,cy,rad*1.4,rad*.45,0,0,Math.PI*2);x.fill()}
+  x.globalCompositeOperation=big?'lighter':'source-over';
+  if(big)for(const b of list){if(b.y<JH-90)continue;const L=look(b.m),cx=ox+(b.x+(JH-b.y)*.3)*k+46*k,cy=o.B+(10+(JH-b.y)*.07)*k,g=x.createRadialGradient(cx,cy,0,cx,cy,b.r*.6*k);
+    g.addColorStop(0,hex2(L.p[2],.4));g.addColorStop(1,hex2(L.p[2],0));x.fillStyle=g;x.fillRect(cx-b.r*k,cy-b.r*k,b.r*2*k,b.r*2*k)}
+  x.restore();
+  /* 奥のガラス（少し青みがかる） */
+  jarOutline(x,ox,oy,k);let g=x.createLinearGradient(o.L,0,o.R,0);g.addColorStop(0,'rgba(200,222,228,.45)');g.addColorStop(.5,'rgba(235,245,246,.22)');g.addColorStop(1,'rgba(200,222,228,.4)');x.fillStyle=g;x.fill();
+  /* 底の厚いガラス */
+  x.fillStyle='rgba(190,214,220,.45)';x.beginPath();x.moveTo(o.L+CR*k*.6,o.B-6*k);x.lineTo(o.R-CR*k*.6,o.B-6*k);x.quadraticCurveTo(o.R-4*k,o.B-5*k,o.R-CR*k*.4,o.B);x.lineTo(o.L+CR*k*.4,o.B);x.quadraticCurveTo(o.L+4*k,o.B-5*k,o.L+CR*k*.6,o.B-6*k);x.fill();
+  /* ビー玉 */
+  x.save();x.beginPath();x.rect(o.L,oy-200*k,o.R-o.L,o.B-oy+200*k);x.clip();
+  for(const b of list){/* ガラス越しの色の影 */const L=look(b.m);x.fillStyle=hex2(L.p[0],.12);x.beginPath();x.ellipse(ox+(b.x+b.r*.2)*k,oy+(b.y+b.r*.3)*k,b.r*k,b.r*.9*k,0,0,Math.PI*2);x.fill()}
+  for(const b of list)drawMarble(x,b.m,ox+b.x*k,oy+b.y*k,b.r*k,b.a,pxk*k);
+  x.restore();
+  /* 手前のガラス：厚みのふち、窓の映り込み、光の筋 */
+  jarOutline(x,ox,oy,k);x.lineWidth=2.6*k;x.strokeStyle='rgba(120,150,160,.55)';x.stroke();
+  x.save();jarOutline(x,ox,oy,k);x.clip();
+  x.lineWidth=7*k;x.strokeStyle='rgba(255,255,255,.28)';jarOutline(x,ox,oy,k);x.stroke();
+  /* 左側に、窓が映り込む */
+  x.fillStyle='rgba(255,255,255,.32)';const wx=o.L+10*k,wy=oy+50*k,ww=34*k,wh=150*k;x.fillRect(wx,wy,ww,wh);
+  x.fillStyle='rgba(255,255,255,.18)';x.fillRect(wx+ww+6*k,wy+10*k,8*k,wh-20*k);
+  x.fillStyle='rgba(160,180,190,.35)';x.fillRect(wx+ww/2-1*k,wy,2*k,wh);x.fillRect(wx,wy+wh*.46,ww,2*k);
+  g=x.createLinearGradient(o.L,0,o.R,0);g.addColorStop(.86,'rgba(255,255,255,0)');g.addColorStop(.92,'rgba(255,255,255,.42)');g.addColorStop(.96,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(o.L,oy,o.R-o.L,o.B-oy);
+  g=x.createLinearGradient(0,o.B-30*k,0,o.B);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,.25)');x.fillStyle=g;x.fillRect(o.L,o.B-30*k,o.R-o.L,30*k);
+  x.restore();
+  /* 口のふち（楕円）と、コルク */
+  const cxm=(o.nl+o.nr)/2,nw=o.nr-o.nl;
+  x.fillStyle='rgba(230,240,242,.85)';x.strokeStyle='rgba(120,150,160,.6)';x.lineWidth=2*k;x.beginPath();x.ellipse(cxm,oy-30*k,nw/2+7*k,7*k,0,0,Math.PI*2);x.fill();x.stroke();
+  g=x.createLinearGradient(o.nl,0,o.nr,0);g.addColorStop(0,'#C99C66');g.addColorStop(.4,'#E2BF8D');g.addColorStop(1,'#B58856');x.fillStyle=g;
+  x.beginPath();x.moveTo(o.nl+5*k,oy-30*k);x.lineTo(o.nl+9*k,oy-70*k);x.lineTo(o.nr-9*k,oy-70*k);x.lineTo(o.nr-5*k,oy-30*k);x.closePath();x.fill();
+  x.fillStyle='#E8CB9E';x.beginPath();x.ellipse(cxm,oy-70*k,nw/2-9*k,5*k,0,0,Math.PI*2);x.fill();
+  const rr=rng(11);x.fillStyle='rgba(120,80,40,.35)';for(let i=0;i<40;i++)x.fillRect(o.nl+10*k+rr()*(nw-20*k),oy-66*k+rr()*34*k,1.2*k,1.2*k);
+  /* 麻ひもと、紙の札 */
+  x.strokeStyle='#A88B62';x.lineWidth=1.4*k;x.beginPath();x.moveTo(o.nl-2*k,oy-22*k);x.quadraticCurveTo(cxm,oy-12*k,o.nr+2*k,oy-22*k);x.stroke();
+  if(big){x.beginPath();x.moveTo(o.nr+1*k,oy-22*k);x.quadraticCurveTo(o.nr+18*k,oy-10*k,o.nr+24*k,oy+8*k);x.stroke();
+    x.save();x.translate(o.nr+24*k,oy+8*k);x.rotate(.12);x.fillStyle='#E9D6B4';x.strokeStyle='rgba(120,90,50,.35)';x.lineWidth=1;
+    x.beginPath();x.moveTo(-28,8);x.lineTo(-20,0);x.lineTo(28,0);x.lineTo(28,46);x.lineTo(-28,46);x.closePath();x.fill();x.stroke();
+    x.fillStyle='#FBF8F2';x.beginPath();x.arc(-18,9,2.4,0,Math.PI*2);x.fill();
+    x.fillStyle='#4A3A28';x.textAlign='center';x.font='600 9px "Hiragino Mincho ProN","Yu Mincho",serif';x.fillText(`No.${jarNo(jar)}`,4,18);
+    x.font='600 12px "Hiragino Mincho ProN","Yu Mincho",serif';x.fillText(`${yen(jarTotal(jar))}円`,2,36);x.restore()}
+}
+
+/* ---------- 動かす（落ち着いたら止める） ---------- */
+let running=false,calm=0,saveT=null,tilting=false;
+function loop(){const mv=step();draw();if(mv<.03&&Math.abs(gx)<.05)calm++;else calm=0;if(calm>50&&!tilting){running=false;persist();return}requestAnimationFrame(loop)}
+function wake(){calm=0;if(!running){running=true;requestAnimationFrame(loop)}}
+function persistNow(){balls.forEach(b=>{b.m.x=+b.x.toFixed(1);b.m.y=+b.y.toFixed(1);b.m.ang=+(b.a%(Math.PI*2)).toFixed(2)})}
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{persistNow();save()},300)}
+
+/* ---------- ガラスの音 ---------- */
+let AC=null,lastClink=0;
+function audio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
+function clink(v){if(!D.prefs.sound||!AC||AC.state!=='running')return;const now=performance.now();if(now-lastClink<45)return;lastClink=now;
+  const t=AC.currentTime,base=2400+Math.random()*1600,vol=.025+v*.08;
+  [[base,1],[base*2.76,.5],[base*5.4,.22]].forEach(([f,kk])=>{const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol*kk,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.12+Math.random()*.1);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.26)})}
+
+/* =========================================================
+   画面
+   ========================================================= */
+let showAll=false;
+const jarTotal=j=>j.marbles.reduce((a,m)=>a+m.amt,0);
+const fillRate=j=>j.marbles.reduce((a,m)=>{const r=radiusFor(m.amt,m);return a+Math.PI*r*r},0)/(JW*(JH-20));
+const jarNo=j=>D.jars.indexOf(j)+1;
+function renderInfo(){
+  const t=jarTotal(jar);$('sum').replaceChildren(yen(t),h('span',{text:'円'}));$('jarName').textContent=jar.name||'使わなかったお金';
+  $('count').replaceChildren(`ビー玉 ${jar.marbles.length}個`,h('br'),`No.${jarNo(jar)} の瓶`);
+  $('goalWrap').classList.toggle('hidden',!jar.goal);if(jar.goal){$('goalBar').style.width=Math.min(100,t/jar.goal*100)+'%';$('goalTxt').textContent=t>=jar.goal?`目標の${yen(jar.goal)}円に届きました`:`目標 ${yen(jar.goal)}円まで、あと${yen(jar.goal-t)}円`}
+  $('fullBox').classList.toggle('hidden',fillRate(jar)<.5);
+  const now=new Date(),ym=now.getFullYear()*12+now.getMonth(),month=jar.marbles.filter(m=>{const d=new Date(m.at);return d.getFullYear()*12+d.getMonth()===ym}).reduce((a,m)=>a+m.amt,0);
+  $('monthSum').textContent=jar.marbles.length?`今月 ${yen(month)}円`:'';
+  $('emptyHint').classList.toggle('hidden',jar.marbles.length>0);
+  const lastM=[...jar.marbles].sort((a,b)=>b.at-a.at)[0];
+  $('lastLine').textContent=lastM?(()=>{const days=Math.floor((Date.now()-lastM.at)/864e5);return days<1?'今日も1つ入れました':`最後に入れたのは${days}日前`})():'まだ何も入っていません';
+  const all=[...jar.marbles].sort((a,b)=>b.at-a.at);$('moreBtn').classList.toggle('hidden',all.length<=6||showAll);
+  const rc=$('recent');rc.replaceChildren();const list=showAll?all:all.slice(0,6);
+  if(!list.length)rc.append(h('div',{class:'none',text:'「＋ 使わなかったお金」から、最初のビー玉を入れてみましょう。'}));
+  list.forEach(m=>{const c=h('canvas',{width:'60',height:'60'});drawMarble(c.getContext('2d'),m,30,30,28,0,1);const d=new Date(m.at);
+    rc.append(h('button',{class:'rrow',onclick:()=>openLoupe(m)},c,h('span',{class:'m',text:m.memo||'使わなかったお金'}),h('span',{class:'a',text:yen(m.amt)+'円'}),h('span',{class:'d',text:`${d.getMonth()+1}/${d.getDate()}`})))});
+  const closed=D.jars.filter(j=>j.closedAt);$('shelfSec').classList.toggle('hidden',!closed.length);
+  $('jars').replaceChildren(...closed.map(j=>h('button',{class:'mini',onclick:()=>openOld(j)},miniJar(j,192),h('b',{text:j.name||'使わなかったお金'}),h('small',{text:yen(jarTotal(j))+'円'}))));
+  draw();
+}
+function miniJar(j,w){const c=document.createElement('canvas'),k=w/(JW+80);c.width=w;c.height=Math.round((JH+110)*k);const x=c.getContext('2d');
+  const list=j.marbles.map(m=>({m,r:radiusFor(m.amt,m),x:typeof m.x==='number'?m.x:JW/2,y:typeof m.y==='number'?m.y:JH-10,a:m.ang||0}));
+  drawJar(x,40*k,76*k,k,list,1,false);return c}
+
+/* ---------- 入れる ---------- */
+let pEdit=false;
+function renderPresets(){$('pEdit').textContent=pEdit?'編集おわり':'編集';$('pEdit').setAttribute('aria-pressed',String(pEdit));
+  $('presets').replaceChildren(...D.presets.map((p,i)=>h('button',{class:'chip'+(pEdit?' edit':''),text:`${p.l}　${yen(p.a)}円`,onclick:()=>{
+      if(pEdit){D.presets.splice(i,1);save();renderPresets();return}$('amtIn').value=String(p.a);$('memoIn').value=p.l.replace(/^\S+\s/,'')}})),
+    pEdit?null:h('button',{class:'chip addp',text:'＋ 足す',onclick:()=>{$('prName').value='';$('prAmt').value='';$('presetS').classList.remove('hidden');setTimeout(()=>$('prName').focus(),80)}}))}
+$('pEdit').onclick=()=>{pEdit=!pEdit;renderPresets()};
+$('prOk').onclick=()=>{const l=str($('prName').value,16),a=toNum($('prAmt').value);if(!l||!a){toast('名前と金額を入れてください');return}D.presets.push({l,a});save();$('presetS').classList.add('hidden');renderPresets()};
+let nextSeed=0;
+function rerollPreview(){nextSeed=(Math.random()*4294967295)>>>0;const c=$('pvCan'),x=c.getContext('2d');x.clearRect(0,0,128,128);const m={id:'preview'+nextSeed,seed:nextSeed};
+  const L=look(m),g=x.createRadialGradient(68,116,0,68,116,50);g.addColorStop(0,hex2(L.p[1],.35));g.addColorStop(1,hex2(L.p[1],0));x.fillStyle=g;x.beginPath();x.ellipse(68,114,50,9,0,0,Math.PI*2);x.fill();
+  drawMarble(x,m,64,60,36+(L.size-11)/19*20,0,1)}
+$('reroll').onclick=()=>{audio();rerollPreview();clink(.4)};
+document.querySelector('.quick').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b)return;const q=Number(b.dataset.q);$('amtIn').value=q?String(Math.min(99999999,toNum($('amtIn').value)+q)):''});
+$('addBtn').onclick=()=>{audio();pEdit=false;$('amtIn').value='';$('memoIn').value='';renderPresets();rerollPreview();$('addS').classList.remove('hidden');setTimeout(()=>$('amtIn').focus(),80)};
+$('amtIn').addEventListener('input',e=>{const n=toNum(e.target.value);e.target.value=n?String(n):''});
+['prAmt','jGoal'].forEach(id=>$(id).addEventListener('input',e=>{const n=toNum(e.target.value);e.target.value=n?String(n):''}));
+$('dropBtn').onclick=()=>{
+  const a=toNum($('amtIn').value);if(!a){toast('金額を入れてください');$('amtIn').focus();return}
+  audio();const m={id:uid(),amt:a,memo:str($('memoIn').value,40),at:Date.now(),seed:nextSeed||((Math.random()*4294967295)>>>0)};
+  jar.marbles.push(m);save();$('addS').classList.add('hidden');
+  const r=radiusFor(a,m),x=JW/2+(Math.random()-.5)*JW*.25,y0=r+4;balls.push({m,r,x,y:y0,px:x,py:y0-2,a:0});
+  window.scrollTo({top:0,behavior:reduce?'auto':'smooth'});wake();renderInfo();toast(`${yen(a)}円のビー玉が、瓶に入りました`);
+};
+
+/* ---------- 光にかざす ---------- */
+let lpM=null;
+function openLoupe(m){lpM=m;const c=$('lpCan'),x=c.getContext('2d');x.clearRect(0,0,360,360);
+  const L=look(m),g=x.createRadialGradient(190,330,0,190,330,150);g.addColorStop(0,hex2(L.p[1],.35));g.addColorStop(1,hex2(L.p[1],0));x.fillStyle=g;x.beginPath();x.ellipse(195,320,150,26,0,0,Math.PI*2);x.fill();
+  drawMarble(x,m,180,170,150,m.ang||0,1);const d=new Date(m.at);
+  $('lpAmt').textContent=yen(m.amt)+'円';$('lpMemo').textContent=m.memo||'使わなかったお金';$('lpDate').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  $('lpDel').classList.toggle('hidden',!jar.marbles.includes(m));$('loupeS').classList.remove('hidden')}
+$('lpDel').onclick=()=>{if(!lpM||!confirm('このビー玉を瓶から取り出しますか？（記録も消えます）'))return;jar.marbles=jar.marbles.filter(x=>x!==lpM);balls=balls.filter(b=>b.m!==lpM);save();$('loupeS').classList.add('hidden');wake();renderInfo()};
+cv.addEventListener('click',e=>{audio();const rc=cv.getBoundingClientRect(),px=(e.clientX-rc.left)/S-JX,py=(e.clientY-rc.top)/S-JT;
+  const b=[...balls].reverse().find(b=>Math.hypot(b.x-px,b.y-py)<=b.r+3);
+  const tx=(JW*.79)+24,ty=-22+30;if(!b&&Math.abs(px-tx-JX*0)<40&&py>-30&&py<60&&px>JW*.6){$('jarBtn').click();return}
+  if(b)openLoupe(b.m);else if(px>-10&&px<JW+10&&py>-60&&py<JH+10)shake(3)});
+
+/* ---------- ゆらす・傾ける ---------- */
+function shake(p){audio();for(const b of balls){b.px=b.x-(Math.random()-.5)*p;b.py=b.y+Math.random()*p*.8}wake()}
+$('shakeBtn').onclick=()=>shake(9);
+function onOrient(e){if(e.gamma==null)return;const g=Math.max(-50,Math.min(50,e.gamma))*Math.PI/180,bt=Math.max(-10,Math.min(80,e.beta||60))*Math.PI/180;gx=Math.sin(g);gy=Math.max(.25,Math.cos(g)*Math.sin(Math.max(.4,bt)));wake()}
+let lastShake=0;function onMotion(e){const a=e.accelerationIncludingGravity||e.acceleration;if(!a)return;const mm=Math.hypot(a.x||0,a.y||0,a.z||0),now=Date.now();if(mm>24&&now-lastShake>400){lastShake=now;shake(Math.min(14,mm-18))}}
+$('tiltBtn').onclick=async()=>{audio();
+  if(tilting){tilting=false;window.removeEventListener('deviceorientation',onOrient);window.removeEventListener('devicemotion',onMotion);gx=0;gy=1;$('tiltBtn').setAttribute('aria-pressed','false');wake();return}
+  try{if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){const p=await DeviceOrientationEvent.requestPermission();if(p!=='granted'){toast('傾きを使う許可が必要です');return}}
+    if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){try{await DeviceMotionEvent.requestPermission()}catch(e){}}}catch(e){toast('この画面では傾きが使えません');return}
+  tilting=true;window.addEventListener('deviceorientation',onOrient);window.addEventListener('devicemotion',onMotion);$('tiltBtn').setAttribute('aria-pressed','true');toast('iPhoneを傾けると、ビー玉が転がります');wake()};
+
+/* ---------- 瓶のこと・棚 ---------- */
+$('moreBtn').onclick=()=>{showAll=true;renderInfo()};
+$('jarBtn').onclick=()=>{$('jName').value=jar.name||'';$('jGoal').value=jar.goal?String(jar.goal):'';$('jarS').classList.remove('hidden')};
+$('jSave').onclick=()=>{jar.name=str($('jName').value,14);jar.goal=toNum($('jGoal').value);save();$('jarS').classList.add('hidden');renderInfo()};
+$('jClose').onclick=()=>{if(!jar.marbles.length){toast('空の瓶はかざれません');return}if(!confirm('この瓶にふたをして、棚にかざりますか？\n新しい空の瓶が出てきます。'))return;
+  jar.name=str($('jName').value,14);jar.goal=toNum($('jGoal').value);persistNow();jar.closedAt=Date.now();jar=newJar();save();balls=[];$('jarS').classList.add('hidden');renderInfo();toast('棚にかざりました。新しい瓶です')};
+let oldJ=null;
+function openOld(j){oldJ=j;$('oTitle').textContent=`${j.name||'使わなかったお金'}　No.${jarNo(j)}`;const c=miniJar(j,460);$('oCan').width=c.width;$('oCan').height=c.height;$('oCan').getContext('2d').drawImage(c,0,0);
+  const a=new Date(j.createdAt),b=new Date(j.closedAt);$('oSub').textContent=`${yen(jarTotal(j))}円・ビー玉${j.marbles.length}個　${a.getFullYear()}/${a.getMonth()+1}/${a.getDate()} 〜 ${b.getFullYear()}/${b.getMonth()+1}/${b.getDate()}`;$('oldS').classList.remove('hidden')}
+$('oDel').onclick=()=>{if(!oldJ||!confirm('この瓶を片づけますか？（中のビー玉の記録も消えます）'))return;D.jars=D.jars.filter(j=>j!==oldJ);save();$('oldS').classList.add('hidden');renderInfo()};
+$('oCan').addEventListener('click',e=>{if(!oldJ)return;const rc=e.target.getBoundingClientRect(),k=rc.width/(JW+80),px=(e.clientX-rc.left)/k-40,py=(e.clientY-rc.top)/k-76;
+  const m=[...oldJ.marbles].reverse().find(m=>Math.hypot((m.x||0)-px,(m.y||0)-py)<=radiusFor(m.amt,m)+3);if(m){$('oldS').classList.add('hidden');openLoupe(m)}});
+
+/* ---------- 設定・バックアップ ---------- */
+$('setBtn').onclick=()=>{$('sSound').setAttribute('aria-pressed',String(!!D.prefs.sound));$('setS').classList.remove('hidden')};
+$('sSound').onclick=()=>{D.prefs.sound=!D.prefs.sound;save();$('sSound').setAttribute('aria-pressed',String(D.prefs.sound));audio();if(D.prefs.sound)clink(.6)};
+$('expBtn').onclick=()=>{persistNow();const clean=D.jars.map(j=>({...j,marbles:j.marbles.map(({_look,...m})=>m)}));const json=JSON.stringify({app:'biidama-no-bin',version:2,jars:clean,presets:D.presets});const u=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  const d=new Date(),a=h('a',{href:u,download:`biidama-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);toast('バックアップを保存しました')};
+$('impIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>10*1024*1024){toast('ファイルが大きすぎます');return}
+  try{const d=JSON.parse(await f.text());if(!d||d.app!=='biidama-no-bin'||!Array.isArray(d.jars))throw 0;
+    const okId=v=>typeof v==='string'&&/^[\w-]{1,40}$/.test(v),have=new Set(D.jars.map(j=>j.id));let n=0;
+    d.jars.forEach(j=>{if(!j||!okId(j.id)||have.has(j.id)||!Array.isArray(j.marbles))return;
+      const ms=j.marbles.filter(m=>m&&okId(m.id)).slice(0,2000).map(m=>({id:m.id,amt:toNum(m.amt)||1,memo:str(m.memo,40),at:Number(m.at)||Date.now(),seed:(Number(m.seed)>>>0)||1,ang:Number.isFinite(m.ang)?m.ang:0,
+        ...(d.version===2&&Number.isFinite(m.x)&&Number.isFinite(m.y)?{x:Math.max(0,Math.min(JW,m.x)),y:Math.max(-200,Math.min(JH,m.y))}:{})}));
+      D.jars.splice(D.jars.length-1,0,{id:j.id,name:str(j.name,14),goal:toNum(j.goal),createdAt:Number(j.createdAt)||Date.now(),closedAt:Number(j.closedAt)||Date.now(),marbles:ms});n++});
+    if(Array.isArray(d.presets))d.presets.forEach(p=>{const l=str(p&&p.l,16),a=toNum(p&&p.a);if(l&&a&&!D.presets.some(q=>q.l===l))D.presets.push({l,a})});
+    save();renderInfo();toast(`${n}個の瓶を戻しました（棚に並びます）`)}catch(err){toast('このアプリのバックアップではないようです')}});
+
+/* =========================================================
+   ムカつき台（パチンコ）
+   台の大きさ：横360・縦560。上は丸く、右に発射レーン。
+   ========================================================= */
+const PW=360,PH=560,PCX=180,PCY=230,PR=168,LANE=326,BR=7.5;
+const pcv=$('pcv'),pctx=pcv.getContext('2d');let pS=1,pDpr=1,pBg=null;
+let P=null;
+function pins(){const a=[];for(let row=0;row<11;row++){const y=118+row*32,off=row%2?16:0;for(let x=34+off;x<=300;x+=32){
+  {const cx=Math.max(100,Math.min(260,x)),cy=Math.max(178,Math.min(236,y));if(Math.hypot(x-cx,y-cy)<2*BR+8)continue}/* ガラスの板のまわりは、玉がはさまらないよう空ける */
+  if(Math.hypot(x-PCX,y-PCY)>PR-18&&y<PCY)continue;if(y>470)continue;
+  if(Math.abs(x-PCX)<22&&y>370&&y<430)continue;if((Math.abs(x-92)<20||Math.abs(x-268)<20)&&y>300&&y<350)continue;a.push({x,y,r:2.6})}}return a}
+const POCKETS=[{x:PCX,y:418,w:30,bonus:5,name:'スッキリ'},{x:92,y:338,w:24,bonus:2,name:''},{x:268,y:338,w:24,bonus:2,name:''}];
+function startPachi(text){
+  const ms=[...jar.marbles];for(let i=ms.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ms[i],ms[j]]=[ms[j],ms[i]]}
+  P={text:text||'ムカつく！',left:ms.length,shot:0,win:0,brk:0,queue:ms,qi:0,balls:[],pins:pins(),plate:{x:100,y:178,w:160,h:58,hits:0,need:7,alive:true,cracks:[]},shards:[],firing:false,lastFire:0,running:true,flash:0};
+  $('pachi').classList.remove('hidden');document.querySelector('.dock').classList.add('hidden');pFit();pUpdate();requestAnimationFrame(pLoop);
+}
+function pFit(){pDpr=Math.min(3,window.devicePixelRatio||1);const box=$('pBoard').getBoundingClientRect();const hgt=Math.min(box.height,box.width*PH/PW);pS=hgt/PH;
+  pcv.style.height=hgt+'px';pcv.style.width=PW*pS+'px';pcv.width=Math.round(PW*pS*pDpr);pcv.height=Math.round(hgt*pDpr);pBg=pPaintBg()}
+function pPaintBg(){const c=document.createElement('canvas');c.width=pcv.width;c.height=pcv.height;const x=c.getContext('2d');x.scale(pS*pDpr,pS*pDpr);
+  /* 木の盤面 */
+  let g=x.createLinearGradient(0,0,PW,PH);g.addColorStop(0,'#F6EBD6');g.addColorStop(1,'#E2CBA6');x.fillStyle=g;pField(x);x.fill();
+  x.save();pField(x);x.clip();const rr=rng(5);x.strokeStyle='rgba(150,110,60,.12)';for(let i=0;i<40;i++){const y=rr()*PH;x.beginPath();x.moveTo(0,y);for(let X=0;X<=PW;X+=24)x.lineTo(X,y+Math.sin(X/50+i)*3);x.stroke()}
+  /* 花の飾り */
+  for(let i=0;i<6;i++){const cx=40+rr()*280,cy=90+rr()*380,col=['#F2B8C6','#BFD9F2','#F7E1A1','#C9E8C2'][i%4];x.fillStyle=col;for(let k=0;k<5;k++){x.beginPath();x.ellipse(cx+Math.cos(k*1.256)*7,cy+Math.sin(k*1.256)*7,6,4,k*1.256,0,Math.PI*2);x.fill()}x.fillStyle='#FFF7DE';x.beginPath();x.arc(cx,cy,3.5,0,Math.PI*2);x.fill()}
+  x.restore();
+  /* 外わくの真鍮レール */
+  x.lineWidth=6;x.strokeStyle='#C9A24A';pField(x);x.stroke();x.lineWidth=1.5;x.strokeStyle='rgba(255,255,255,.6)';pField(x);x.stroke();
+  /* 発射レーンの仕切り */
+  x.fillStyle='#C9A24A';x.fillRect(LANE-2,250,4,PH-250);
+  /* 入賞口 */
+  for(const p of POCKETS){x.fillStyle=p.bonus>=5?'#D9563A':'#5B7FA6';x.beginPath();x.moveTo(p.x-p.w/2-6,p.y-6);x.lineTo(p.x+p.w/2+6,p.y-6);x.lineTo(p.x+p.w/2,p.y+16);x.lineTo(p.x-p.w/2,p.y+16);x.closePath();x.fill();
+    x.fillStyle='#FFF4D6';x.font='600 9px "Hiragino Sans",sans-serif';x.textAlign='center';x.fillText(p.bonus>=5?'+5':'+2',p.x,p.y+11);
+    x.fillStyle='rgba(40,20,10,.5)';x.fillRect(p.x-p.w/2,p.y-6,p.w,4)}
+  /* くぎ */
+  for(const n of P.pins){x.fillStyle='rgba(80,50,20,.25)';x.beginPath();x.arc(n.x+1,n.y+1.5,n.r,0,Math.PI*2);x.fill();const pg=x.createRadialGradient(n.x-.8,n.y-.8,0,n.x,n.y,n.r);pg.addColorStop(0,'#FFF6D8');pg.addColorStop(1,'#B58A3A');x.fillStyle=pg;x.beginPath();x.arc(n.x,n.y,n.r,0,Math.PI*2);x.fill()}
+  /* 下の受け皿 */
+  x.fillStyle='rgba(60,40,20,.35)';x.fillRect(10,PH-14,LANE-12,14);
+  return c}
+function pField(x){x.beginPath();x.moveTo(8,PH);x.lineTo(8,PCY);x.arc(PCX,PCY,PR+4,Math.PI,0);x.lineTo(PCX+PR+4,PH);x.closePath()}
+function pTex(i){return P.queue[i%Math.max(1,P.queue.length)]}
+function fire(){if(!P||P.left<=0)return;const pow=Number($('pPow').value)/100,v=(820+pow*500)/60/4;
+  const m=pTex(P.qi++);P.left--;P.shot++;P.balls.push({m,x:LANE+12,y:PH-14,px:LANE+12+(Math.random()-.5)*.2,py:PH-14+v,a:0,lane:true});pUpdate();launchSound(pow)}
+function pStep(){
+  const sub=4,g=.3/(sub*sub);
+  for(let s=0;s<sub;s++){
+    for(const b of P.balls){const vx=(b.x-b.px)*.999,vy=(b.y-b.py)*.999;b.px=b.x;b.py=b.y;b.x+=vx;b.y+=vy+g}
+    for(const b of P.balls){
+      /* 外わく（上は円、横はまっすぐ） */
+      if(b.y<PCY){const dx=b.x-PCX,dy=b.y-PCY,d=Math.hypot(dx,dy),lim=PR-BR;if(d>lim){const nx=dx/d,ny=dy/d;b.x=PCX+nx*lim;b.y=PCY+ny*lim;bounce(b,-nx,-ny,.6)}}
+      if(b.x<10+BR){b.x=10+BR;bounce(b,1,0,.5)}if(b.x>PCX+PR-BR){b.x=PCX+PR-BR;bounce(b,-1,0,.4)}
+      /* 発射レーンの仕切り */
+      if(b.y>250){if(b.lane&&b.x<LANE+2+BR){b.x=LANE+2+BR;bounce(b,1,0,.3)}if(!b.lane&&b.x>LANE-2-BR&&b.x<LANE+4){b.x=LANE-2-BR;bounce(b,-1,0,.5)}}else if(b.lane&&b.x<LANE-6)b.lane=false;
+      /* くぎ */
+      for(const n of P.pins){const dx=b.x-n.x,dy=b.y-n.y,rr=BR+n.r,d2=dx*dx+dy*dy;if(d2<rr*rr){const d=Math.sqrt(d2)||1,nx=dx/d,ny=dy/d;b.x=n.x+nx*rr;b.y=n.y+ny*rr;const sp=bounce(b,nx,ny,.55);if(sp>.45)pinSound(sp*2.5)}}
+      /* ガラスの板 */
+      const pl=P.plate;if(pl.alive){const cx=Math.max(pl.x,Math.min(pl.x+pl.w,b.x)),cy=Math.max(pl.y,Math.min(pl.y+pl.h,b.y)),dx=b.x-cx,dy=b.y-cy,d=Math.hypot(dx,dy);
+        if(d<BR){const nx=d?dx/d:0,ny=d?dy/d:-1;b.x=cx+nx*BR;b.y=cy+ny*BR;const sp=bounce(b,nx,ny,.5);if(ny<-.5){b.px-=(b.x<pl.x+pl.w/2?-1:1)*.06}if(sp>.5&&!b.hitPlate){b.hitPlate=30;hitPlate(b)}}}
+      if(b.hitPlate)b.hitPlate--;
+    }
+    /* 玉どうし */
+    for(let i=0;i<P.balls.length;i++)for(let j=i+1;j<P.balls.length;j++){const a=P.balls[i],c=P.balls[j],dx=c.x-a.x,dy=c.y-a.y,d2=dx*dx+dy*dy;if(d2<4*BR*BR&&d2>1e-6){const d=Math.sqrt(d2),o=(2*BR-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;c.x+=nx*o;c.y+=ny*o}}
+  }
+  /* 入賞口・アウト・レーンに戻った玉 */
+  P.balls=P.balls.filter(b=>{b.a+=(b.x-b.px)/BR;
+    for(const p of POCKETS){if(!b.lane&&Math.abs(b.x-p.x)<p.w/2&&b.y>p.y-6&&b.y<p.y+4&&b.y-b.py>0){P.win++;P.left+=p.bonus;winFx(p);return false}}
+    if(b.y>PH-BR-2&&!b.lane){return false}
+    if(b.lane&&b.y>PH-BR&&b.y-b.py>=0){P.left++;return false}/* 弱すぎて戻ってきた玉は、のこりにもどす */
+    return true});
+  for(const sh of P.shards){sh.vy+=.25;sh.x+=sh.vx;sh.y+=sh.vy;sh.rot+=sh.vr;sh.life--}P.shards=P.shards.filter(s=>s.life>0);
+  if(P.flash)P.flash--;
+}
+function bounce(b,nx,ny,e){let vx=b.x-b.px,vy=b.y-b.py;const vn=vx*nx+vy*ny;if(vn<0){vx-=(1+e)*vn*nx;vy-=(1+e)*vn*ny;b.px=b.x-vx;b.py=b.y-vy;return -vn}return 0}
+function hitPlate(b){const pl=P.plate;pl.hits++;const rr=Math.random;
+  pl.cracks.push({x:Math.max(pl.x+6,Math.min(pl.x+pl.w-6,b.x)),y:Math.max(pl.y+6,Math.min(pl.y+pl.h-6,b.y)),rays:[...Array(5)].map(()=>({a:rr()*Math.PI*2,l:10+rr()*26}))});
+  crackSound();
+  if(pl.hits>=pl.need){pl.alive=false;P.brk++;pUpdate();shatterSound();showMsg('パリーン！');
+    for(let i=0;i<40;i++)P.shards.push({x:pl.x+rr()*pl.w,y:pl.y+rr()*pl.h,vx:(rr()-.5)*6,vy:-rr()*5,rot:rr()*6,vr:(rr()-.5)*.4,s:3+rr()*9,life:60+rr()*40});
+    setTimeout(()=>{if(P){P.plate={...pl,hits:0,cracks:[],alive:true}}},2600)}}
+function winFx(p){P.flash=20;pUpdate();showMsg(p.bonus>=5?'スッキリ！ +5':'+2');winSound(p.bonus)}
+function showMsg(t){const e=$('pMsg');e.textContent=t;e.classList.remove('show');void e.offsetWidth;e.classList.add('show')}
+function pDraw(){const x=pctx;x.setTransform(1,0,0,1,0,0);x.drawImage(pBg,0,0);x.setTransform(pS*pDpr,0,0,pS*pDpr,0,0);
+  /* ガラスの板と、書いた言葉 */
+  const pl=P.plate;if(pl.alive){x.save();x.fillStyle='rgba(225,240,245,.55)';x.strokeStyle='rgba(120,150,160,.8)';x.lineWidth=2;x.beginPath();x.rect(pl.x,pl.y,pl.w,pl.h);x.fill();x.stroke();
+    x.fillStyle='rgba(255,255,255,.6)';x.fillRect(pl.x+6,pl.y+5,4,pl.h-10);
+    x.fillStyle='#8A2E22';x.textAlign='center';x.textBaseline='middle';let fs=20;x.font=`700 ${fs}px "Hiragino Mincho ProN","Yu Mincho",serif`;while(x.measureText(P.text).width>pl.w-20&&fs>10){fs--;x.font=`700 ${fs}px "Hiragino Mincho ProN","Yu Mincho",serif`}
+    x.fillText(P.text,pl.x+pl.w/2,pl.y+pl.h/2+1);
+    x.strokeStyle='rgba(255,255,255,.95)';x.lineWidth=1.2;for(const c of pl.cracks){for(const r of c.rays){x.beginPath();x.moveTo(c.x,c.y);x.lineTo(c.x+Math.cos(r.a)*r.l*.5,c.y+Math.sin(r.a)*r.l*.5+2);x.lineTo(c.x+Math.cos(r.a)*r.l,c.y+Math.sin(r.a)*r.l);x.stroke()}}
+    x.fillStyle='rgba(60,30,20,.55)';x.font='600 9px "Hiragino Sans",sans-serif';x.fillText(`あと${Math.max(0,pl.need-pl.hits)}発`,pl.x+pl.w/2,pl.y+pl.h+9);x.restore()}
+  for(const sh of P.shards){x.save();x.translate(sh.x,sh.y);x.rotate(sh.rot);x.globalAlpha=Math.min(1,sh.life/30);x.fillStyle='rgba(220,238,244,.85)';x.strokeStyle='rgba(255,255,255,.9)';x.lineWidth=.8;x.beginPath();x.moveTo(-sh.s/2,-sh.s/3);x.lineTo(sh.s/2,-sh.s/2);x.lineTo(sh.s/3,sh.s/2);x.closePath();x.fill();x.stroke();x.restore()}
+  if(P.flash){x.fillStyle=`rgba(255,230,160,${P.flash/60})`;x.fillRect(0,0,PW,PH)}
+  /* 玉（瓶のビー玉そのもの） */
+  for(const b of P.balls)drawMarble(x,b.m,b.x,b.y,BR,b.a,pS*pDpr);
+  /* 盤面のガラスの反射 */
+  const g=x.createLinearGradient(0,0,PW,PH);g.addColorStop(0,'rgba(255,255,255,.18)');g.addColorStop(.3,'rgba(255,255,255,0)');g.addColorStop(.7,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,.08)');x.fillStyle=g;pField(x);x.fill();
+}
+function pLoop(t){if(!P||!P.running)return;
+  if(P.firing&&t-P.lastFire>360){P.lastFire=t;fire()}
+  pStep();pDraw();
+  if(P.left<=0&&!P.balls.length&&!P.shards.length&&!P.firingEnd){P.firingEnd=true;setTimeout(endPachi,700)}
+  requestAnimationFrame(pLoop)}
+function pUpdate(){$('pLeft').textContent=P.left;$('pWin').textContent=P.win;$('pBreak').textContent=P.brk}
+function endPachi(){if(!P)return;P.running=false;$('rsSub').textContent=`${P.shot}発打って、入賞${P.win}回。ムカつきの板を${P.brk}枚割りました。`;$('resS').classList.remove('hidden')}
+function closePachi(){if(P)P.running=false;P=null;$('pachi').classList.add('hidden');document.querySelector('.dock').classList.remove('hidden');$('resS').classList.add('hidden')}
+$('pachiBtn').onclick=()=>{audio();if(!jar.marbles.length){toast('瓶が空っぽです。まずはビー玉を入れましょう');return}
+  $('mkSub').textContent=`瓶のビー玉 ${jar.marbles.length}個を、パチンコ玉として打てます。`;$('mkIn').value='';$('mukaS').classList.remove('hidden');setTimeout(()=>$('mkIn').focus(),80)};
+$('mkGo').onclick=()=>{audio();$('mukaS').classList.add('hidden');startPachi(str($('mkIn').value,14))};
+$('pQuit').onclick=()=>{if(P&&P.shot&&!confirm('やめますか？　ビー玉は全部、瓶にもどります。'))return;closePachi()};
+$('pSound').onclick=()=>{D.prefs.sound=!D.prefs.sound;save();toast(D.prefs.sound?'音をつけました':'音を消しました')};
+$('rsOk').onclick=closePachi;
+$('rsAgain').onclick=()=>{const t=P?P.text:'';$('resS').classList.add('hidden');startPachi(t)};
+const fb=$('pFire');
+fb.addEventListener('pointerdown',e=>{e.preventDefault();audio();if(!P)return;fb.setPointerCapture(e.pointerId);fb.classList.add('on');P.firing=true;P.lastFire=-1e9});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>fb.addEventListener(ev,()=>{fb.classList.remove('on');if(P)P.firing=false}));
+window.addEventListener('resize',()=>{if(P)pFit()});
+/* 音 */
+function tone(f,len,vol,type,when){if(!D.prefs.sound||!AC)return;const t=AC.currentTime+(when||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+len+.05)}
+function noiseHit(len,vol,f){if(!D.prefs.sound||!AC)return;const b=AC.createBuffer(1,AC.sampleRate*len,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const s=AC.createBufferSource();s.buffer=b;const fl=AC.createBiquadFilter();fl.type='highpass';fl.frequency.value=f||2000;const g=AC.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(AC.destination);s.start()}
+let lastPin=0;function pinSound(sp){const n=performance.now();if(n-lastPin<30)return;lastPin=n;tone(3200+Math.random()*1800,.06,Math.min(.06,.012*sp),'triangle')}
+function launchSound(p){noiseHit(.12,.05+p*.05,1200)}
+function crackSound(){noiseHit(.09,.12,3000);tone(4200,.08,.04)}
+function shatterSound(){noiseHit(.5,.35,2500);for(let i=0;i<14;i++)tone(3000+Math.random()*4000,.15+Math.random()*.2,.035,'sine',Math.random()*.35)}
+function winSound(b){[784,988,1175,1568].slice(0,b>=5?4:2).forEach((f,i)=>tone(f,.25,.06,'triangle',i*.08))}
+
+document.querySelectorAll('.scrim').forEach(s=>s.addEventListener('click',e=>{if(e.target===s||e.target.closest('[data-close]'))s.classList.add('hidden')}));
+document.addEventListener('pointerdown',()=>{if(AC&&AC.state==='suspended')AC.resume()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){persistNow();save()}});
+
+/* =========================================================
+   起動：前の位置がなければ、上から注ぐ
+   ========================================================= */
+const needPour=jar.marbles.some(m=>typeof m.x!=='number');
+buildBalls(true);fit();renderInfo();if(needPour)wake();
+window.addEventListener('resize',fit);
+</script>
+</body>
+</html>
