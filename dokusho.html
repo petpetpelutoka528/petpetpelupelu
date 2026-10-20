@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; media-src blob: mediastream:; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#231C19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="読書室">
+<title>まるい読書室</title>
+<style>
+/* =========================================================
+   まるい読書室
+   ・部屋：ランプの下の丸テーブル。四方の席に、まるちゃん・くま・館長・あなた。
+   ・喫茶：黒板のメニューと、手書きの伝票。
+   ・本棚：図書館の背ラベル（分類記号）と、図書カード。
+   ・きろく：銀行の通帳のような「読書通帳」に記帳する。
+   ========================================================= */
+:root{
+  --night:#231C19;--wall:#2F2622;--lamp:#FFD9A0;--amber:#E8B96A;
+  --paper:#F4EADB;--paper2:#E9DCC7;--ink:#3A2E2A;--soft:#8C7B6B;--cream:#F3E7D3;--dim:#BBA996;--line:rgba(243,231,211,.14);
+  --board:#27322C;--chalk:#EDEAE0;--stamp:#B4473A;--passbook:#EEF2EA;--pbline:#C9D6C3;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Noto Serif CJK JP",serif;
+  --maru:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"SF Mono","Menlo","Osaka-Mono","Noto Sans Mono CJK JP",monospace;
+  --navh:64px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;overflow-x:hidden}
+body{font-family:var(--maru);color:var(--cream);background:var(--night);font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  background-image:radial-gradient(ellipse at 50% 0,#3E2F27 0,transparent 70%)}
+button,input,textarea,select{font:inherit;color:inherit}
+input,textarea,select{font-size:16px}
+button{cursor:pointer}
+button:disabled{opacity:.4;cursor:default}
+:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.hidden{display:none!important}
+main{max-width:620px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top,0px)) 14px calc(var(--navh) + 30px + env(safe-area-inset-bottom,0px))}
+.top{display:flex;align-items:baseline;justify-content:space-between;padding:6px 4px 10px}
+.top h1{margin:0;font-family:var(--mincho);font-weight:600;font-size:22px;letter-spacing:.18em;color:var(--lamp)}
+.top .gear{border:none;background:transparent;color:var(--dim);font-size:13px;min-height:40px;padding:0 6px}
+
+/* ---------- 部屋 ---------- */
+.room{position:relative;border-radius:18px;overflow:hidden;background:var(--wall);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.room svg{display:block;width:100%;height:auto}
+.caption{text-align:center;font-family:var(--mincho);color:var(--dim);font-size:13px;margin:12px 0 0;letter-spacing:.06em;min-height:1.7em}
+.breathe{animation:breathe 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.breathe.b2{animation-duration:6.4s;animation-delay:-2s}.breathe.b3{animation-duration:7.2s;animation-delay:-4s}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.012,.99)}}
+.doze{animation:doze 9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 90%}
+@keyframes doze{0%,62%,100%{transform:rotate(0)}70%,86%{transform:rotate(7deg) translateY(2px)}}
+.glow{animation:glow 7s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:.85}50%{opacity:1}}
+.steam path{stroke-dasharray:4 6;animation:steam 4s linear infinite}
+.steam path:nth-child(2){animation-delay:-2s}
+@keyframes steam{from{stroke-dashoffset:0;opacity:0}30%{opacity:.55}to{stroke-dashoffset:-30;opacity:0}}
+.rain line{animation:rain 1.1s linear infinite}
+@keyframes rain{from{transform:translateY(-40px)}to{transform:translateY(60px)}}
+.star{animation:tw 4s ease-in-out infinite}
+@keyframes tw{50%{opacity:.25}}
+.flame{animation:flame .9s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes flame{to{transform:scale(.92,1.08)}}
+.flip{animation:flip 1.1s ease-in-out;transform-box:fill-box;transform-origin:0 50%}
+@keyframes flip{0%{transform:scaleX(1)}50%{transform:scaleX(-1)}100%{transform:scaleX(-1);opacity:0}}
+.sip{animation:sip 2.4s ease-in-out;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes sip{0%,100%{transform:none}30%,70%{transform:translateY(-10px) rotate(-14deg)}}
+.reading .dimmer{opacity:.38}
+.dimmer{opacity:0;transition:opacity 2.5s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- パネル共通 ---------- */
+.panel{background:rgba(255,248,236,.05);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:16px}
+.panel h2{margin:0 0 10px;font-family:var(--mincho);font-weight:600;font-size:16px;color:var(--lamp);letter-spacing:.08em}
+.lbl{display:block;font-size:12px;color:var(--dim);margin:14px 0 6px;letter-spacing:.06em}
+.lbl:first-of-type{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:rgba(255,248,236,.04);color:var(--cream);border-radius:999px;padding:7px 15px;min-height:42px;font-size:14px}
+.chip[aria-pressed=true]{background:var(--amber);border-color:var(--amber);color:#2A1E14;font-weight:700}
+.bookpick{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--line);background:rgba(255,248,236,.04);border-radius:14px;padding:10px 12px;text-align:left;min-height:56px}
+.bookpick .sp{flex:none;width:10px;height:40px;border-radius:2px;background:var(--c,#8C7B6B)}
+.bookpick b{display:block;font-family:var(--mincho);font-size:16px;font-weight:600}
+.bookpick small{display:block;font-size:12px;color:var(--dim)}
+.vol{width:100%;accent-color:var(--amber)}
+.start{display:block;width:100%;margin-top:18px;border:none;border-radius:14px;min-height:58px;font-family:var(--mincho);font-size:19px;font-weight:600;letter-spacing:.2em;
+  color:#2A1E14;background:linear-gradient(180deg,#F4CF8A,var(--amber));box-shadow:0 8px 24px rgba(232,185,106,.25)}
+.mycup{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dim);margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.mycup b{color:var(--cream);font-weight:600}
+.mycup button{margin-left:auto;border:1px solid var(--line);background:transparent;color:var(--cream);border-radius:999px;min-height:38px;padding:0 14px;font-size:13px}
+.timer{text-align:center;padding:18px 0 4px}
+.timer .big{font-family:var(--mincho);font-size:52px;letter-spacing:.06em;color:var(--lamp);font-variant-numeric:tabular-nums;line-height:1.1}
+.timer .sub{font-size:13px;color:var(--dim);margin-top:4px}
+.ring{height:4px;border-radius:2px;background:var(--line);overflow:hidden;margin:16px auto 0;max-width:340px}
+.ring i{display:block;height:100%;width:0;background:var(--amber);transition:width 1s linear}
+.row2{display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:rgba(255,248,236,.06);color:var(--cream);border-radius:999px;padding:10px 22px;min-height:48px;font-size:15px}
+.btn.amber{background:var(--amber);border-color:var(--amber);color:#2A1E14;font-weight:700}
+.pipbtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:14px auto 0;border:1px solid var(--line);background:rgba(255,248,236,.06);color:var(--cream);border-radius:999px;padding:8px 18px;min-height:44px;font-size:14px}
+.pipbtn svg{width:20px;height:20px}
+.bgnote{font-size:12px;color:var(--dim);text-align:center;margin:10px 0 0;line-height:1.7}
+.pipwrap{margin:14px auto 0;max-width:260px;text-align:center}
+#pipVideo{display:block;width:100%;aspect-ratio:16/9;border-radius:10px;background:#231C19;border:1px solid var(--line)}
+.pipwrap small{display:block;font-size:11px;color:var(--dim);margin-top:4px}
+.reads{font-size:12.5px;color:var(--dim);line-height:1.9;margin:14px 0 0;text-align:center;font-family:var(--mincho)}
+
+/* ---------- 喫茶：黒板のメニュー ---------- */
+.board{position:relative;background:var(--board);border-radius:6px;padding:20px 18px 16px;
+  box-shadow:inset 0 0 0 9px #6E4B33,inset 0 0 0 11px #4E3424,inset 0 0 40px rgba(0,0,0,.45),0 14px 30px rgba(0,0,0,.4);
+  background-image:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.05),transparent 60%),radial-gradient(ellipse at 80% 90%,rgba(255,255,255,.04),transparent 50%)}
+.board::after{content:"";position:absolute;left:24px;right:24px;bottom:-4px;height:8px;background:#6E4B33;border-radius:2px;box-shadow:0 3px 6px rgba(0,0,0,.4)}
+.board h2{margin:0 0 2px;text-align:center;font-family:var(--mincho);font-size:21px;letter-spacing:.3em;color:var(--chalk);text-shadow:0 0 1px rgba(237,234,224,.6);font-weight:600}
+.board .en{text-align:center;font-size:11px;letter-spacing:.35em;color:#B9C2B6;margin-bottom:12px}
+.board .sec{font-family:var(--mincho);font-size:13px;color:#E8D49A;letter-spacing:.2em;margin:14px 4px 4px;border-bottom:1px dashed rgba(237,234,224,.25);padding-bottom:4px}
+.menu{display:flex;flex-direction:column}
+.mi{width:100%;display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;border:none;background:transparent;text-align:left;padding:8px 4px;color:var(--chalk);border-radius:8px;min-height:54px}
+.mi:active{background:rgba(255,255,255,.05)}
+.mi svg{width:40px;height:40px}
+.mi b{display:block;font-family:var(--mincho);font-size:16px;font-weight:600;text-shadow:0 0 1px rgba(237,234,224,.5)}
+.mi small{display:block;font-size:11px;color:#B9C2B6;line-height:1.5}
+.mi .mg{font-family:var(--mincho);font-size:13px;color:#E8D49A;text-align:right;white-space:nowrap}
+.mi .mg.zero{color:#A9D1B0}
+.bnote{font-size:10.5px;color:#9FA99C;line-height:1.7;margin:12px 4px 0}
+/* 伝票（今日の一杯の記録） */
+.slip{position:relative;background:#FBF8F1;color:var(--ink);margin-top:22px;padding:18px 18px 22px;font-size:14px;
+  -webkit-mask:linear-gradient(#000,#000) top/100% calc(100% - 10px) no-repeat,radial-gradient(circle at 6px 0,transparent 6px,#000 6.5px) bottom/12px 10px repeat-x;
+          mask:linear-gradient(#000,#000) top/100% calc(100% - 10px) no-repeat,radial-gradient(circle at 6px 0,transparent 6px,#000 6.5px) bottom/12px 10px repeat-x;
+  box-shadow:0 10px 24px rgba(0,0,0,.35)}
+.slip h3{margin:0;text-align:center;font-family:var(--mincho);font-size:17px;letter-spacing:.4em}
+.slip .no{text-align:center;font-size:11px;color:var(--soft);font-family:var(--mono);margin-bottom:10px}
+.slip .rows{border-top:1px solid #DCCFB7;border-bottom:1px solid #DCCFB7;padding:4px 0}
+.slip .r{display:grid;grid-template-columns:3.3em 1fr auto auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dotted #E2D7C3;font-family:var(--mincho)}
+.slip .r:last-child{border-bottom:none}
+.slip .r .t,.slip .r .m{font-family:var(--mono);font-size:12px;color:var(--soft)}
+.slip .r .m{color:var(--ink);font-size:13px}
+.slip .r .x{border:none;background:transparent;color:#BBA996;width:28px;height:28px;padding:0;font-size:14px}
+.slip .sum{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-family:var(--mincho)}
+.slip .sum b{font-family:var(--mono);font-size:22px}
+.gauge{height:10px;border-radius:5px;background:#EDE3D2;overflow:hidden;margin:8px 0 4px;position:relative}
+.gauge i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#9DB86A,#E8B96A 60%,#C25A3E)}
+.slip .hint{font-size:12px;color:var(--soft);line-height:1.7}
+.slip .empty{color:var(--soft);font-size:13px;text-align:center;padding:12px 0;font-family:var(--mincho)}
+.slip .stampmark{position:absolute;right:16px;top:12px;width:54px;height:54px;border:2px solid var(--stamp);border-radius:50%;color:var(--stamp);display:grid;place-items:center;
+  font-family:var(--mincho);font-size:11px;line-height:1.2;text-align:center;transform:rotate(-12deg);opacity:.75}
+/* 一杯いれる */
+.brew{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(ellipse at 50% 35%,#4A3528 0,#231C19 60%,#140F0D 100%);padding:24px}
+.brew svg{width:min(78vw,320px);height:auto}
+.brew .step{font-family:var(--mincho);font-size:20px;color:var(--lamp);margin-top:12px;min-height:1.6em;letter-spacing:.1em}
+.brew .hint{font-size:13px;color:var(--dim);min-height:1.7em}
+.brew .skip{margin-top:18px}
+.pour{opacity:0;transition:opacity .4s}.pour.on{opacity:1}
+.drop{animation:dropf .7s linear infinite}
+@keyframes dropf{from{transform:translateY(0);opacity:1}to{transform:translateY(22px);opacity:0}}
+#brewFill{transition:height 2.4s ease-in-out,y 2.4s ease-in-out}
+
+/* ---------- 本棚 ---------- */
+.shelf{background:linear-gradient(180deg,#4A3326,#3C291E);border-radius:12px;padding:14px 12px 0;box-shadow:inset 0 2px 0 rgba(255,255,255,.05)}
+.shelf h3{margin:0 0 8px;font-family:var(--mincho);font-weight:600;font-size:14px;color:var(--dim);letter-spacing:.1em}
+.books{display:flex;align-items:flex-end;gap:5px;overflow-x:auto;padding:4px 2px 0;min-height:170px;scrollbar-width:none;border-bottom:10px solid #7A4E32}
+.books::-webkit-scrollbar{display:none}
+.spine{position:relative;flex:none;border:none;border-radius:3px 3px 0 0;color:#FFF8EC;width:40px;padding:10px 0 0;display:flex;flex-direction:column;align-items:center;background:var(--c);
+  box-shadow:inset -4px 0 0 rgba(0,0,0,.18),inset 3px 0 0 rgba(255,255,255,.1);overflow:hidden}
+.spine .tt{writing-mode:vertical-rl;text-orientation:mixed;font-family:var(--mincho);font-size:13px;letter-spacing:.12em;max-height:calc(100% - 64px);overflow:hidden;white-space:nowrap}
+/* 背ラベル（分類記号・著者記号・巻） */
+.spine .lab{position:absolute;left:4px;right:4px;bottom:8px;background:#FBF8F1;color:#2A2320;border-radius:3px;font-family:var(--mono);font-size:9.5px;line-height:1.25;text-align:center;padding:3px 0;box-shadow:0 1px 0 rgba(0,0,0,.2)}
+.spine .lab span{display:block;border-bottom:1px solid #D9CDB8}.spine .lab span:last-child{border-bottom:none}
+.spine.add{background:transparent;border:1px dashed rgba(243,231,211,.35);color:var(--dim);justify-content:center;writing-mode:vertical-rl;font-size:13px;padding:0}
+.emptyshelf{color:var(--dim);font-size:13px;align-self:center;padding:0 8px}
+.facing{display:flex;gap:14px;overflow-x:auto;padding:6px 4px 0;scrollbar-width:none;border-bottom:10px solid #7A4E32;min-height:190px;align-items:flex-end}
+.facing::-webkit-scrollbar{display:none}
+.fo{flex:none;width:96px;border:none;background:transparent;padding:0 0 10px;color:var(--cream);text-align:center}
+.cover{position:relative;width:96px;aspect-ratio:2/3;border-radius:2px 4px 4px 2px;overflow:hidden;box-shadow:inset 3px 0 0 rgba(0,0,0,.25),2px 6px 12px rgba(0,0,0,.45);background:var(--c)}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .gen{position:absolute;inset:8px 8px 8px 10px;border:1px solid rgba(255,248,236,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:6px;text-align:center}
+.cover .gen b{font-family:var(--mincho);font-size:13px;line-height:1.4;color:#FFF8EC;overflow-wrap:anywhere}
+.cover .gen small{font-size:9px;color:rgba(255,248,236,.8)}
+.cover .band{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(0,0,0,.25)}
+.cover .bar{position:absolute;left:0;bottom:0;height:5px;background:var(--amber)}
+.fo .nm{display:block;font-family:var(--mincho);font-size:12px;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fo .pg{display:block;font-size:10px;color:var(--dim)}
+.fo.add .cover{background:transparent;border:1px dashed rgba(243,231,211,.35);box-shadow:none;display:grid;place-items:center;color:var(--dim);font-size:13px}
+.coverbox{display:flex;gap:12px;align-items:center;margin:8px 0 4px}
+.coverbox .cover{width:76px;flex:none}
+.coverbox .cbtns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.filebtn{position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+.bookpick .thumb{flex:none;width:30px;aspect-ratio:2/3;border-radius:2px;overflow:hidden;background:var(--c);box-shadow:1px 2px 4px rgba(0,0,0,.4)}
+.bookpick .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.card .cvr{float:right;width:58px;margin:4px 0 6px 10px}
+.card .cvr .cover{width:100%}
+.pace{font-size:12.5px;color:var(--soft);margin-top:8px;font-family:var(--mincho)}
+/* 読了のお祝い */
+.done-ov{position:fixed;inset:0;z-index:35;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;
+  background:radial-gradient(ellipse at 50% 40%,rgba(74,53,40,.97),rgba(20,15,13,.98))}
+.done-ov .cover{width:120px;margin-bottom:18px}
+.done-ov .dstamp{position:absolute;margin-left:90px;margin-top:-30px;width:86px;height:86px;border:4px solid var(--stamp);border-radius:50%;color:var(--stamp);display:grid;place-items:center;
+  font-family:var(--mincho);font-weight:700;font-size:24px;background:rgba(255,250,240,.9);transform:rotate(-14deg);animation:stampin .5s cubic-bezier(.2,1.6,.4,1) .4s both}
+@keyframes stampin{from{transform:scale(2.4) rotate(-14deg);opacity:0}to{transform:scale(1) rotate(-14deg);opacity:1}}
+.done-ov h3{font-family:var(--mincho);font-size:22px;color:var(--lamp);margin:6px 0 4px;letter-spacing:.1em}
+.done-ov p{font-size:13px;color:var(--dim);margin:0 0 6px}
+.done-ov .say{max-width:340px;color:var(--ink);text-align:left}
+.done-ov .wrap{position:relative;display:flex;justify-content:center}
+.shelfwrap{display:flex;flex-direction:column;gap:14px}
+
+/* ---------- きろく：読書通帳 ---------- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats div{border:1px solid var(--line);border-radius:14px;padding:10px 4px}
+.stats b{display:block;font-family:var(--mincho);font-size:24px;color:var(--lamp);line-height:1.3;font-weight:600}
+.stats span{font-size:11px;color:var(--dim)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:140px;margin-top:6px}
+.week .d{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:11px;color:var(--dim)}
+.week .bar{width:70%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#F4CF8A,#B98A45);min-height:3px}
+.week .d.today{color:var(--lamp);font-weight:700}
+.week .m{font-size:10px;color:var(--dim)}
+.passbook{margin-top:16px;background:var(--passbook);color:#2C3A2E;border-radius:6px;padding:16px 14px 18px;box-shadow:0 12px 28px rgba(0,0,0,.4);
+}
+.pbhead{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #6B8A6E;padding-bottom:6px;margin-bottom:2px}
+.pbhead b{font-family:var(--mincho);font-size:18px;letter-spacing:.3em;font-weight:600}
+.pbhead small{font-family:var(--mono);font-size:11px;color:#5E7462}
+.pbcols,.pbrow{display:grid;grid-template-columns:5.2em 1fr 3.2em 3.6em 4.6em;gap:6px;align-items:center}
+.pbcols{font-size:10.5px;color:#5E7462;padding:6px 0 4px;border-bottom:1px solid #6B8A6E;letter-spacing:.08em}
+.pbcols span:nth-child(n+3){text-align:right}
+.pbrow{height:34px;font-family:var(--mono);font-size:12px;border-bottom:1px solid var(--pbline)}
+.pbrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbrow span:nth-child(n+3){text-align:right;font-variant-numeric:tabular-nums}
+.pbrow .ttl{font-family:var(--mincho);font-size:13px}
+.pbrow.new{animation:print .5s steps(6) both}
+@keyframes print{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.pbpage{font-size:10px;color:#7D917F;text-align:center;letter-spacing:.2em;margin:6px 0 2px}
+.kicho{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px}
+.kicho button{border:none;border-radius:8px;background:#2F5A3A;color:#EEF2EA;min-height:48px;padding:0 22px;font-weight:700;letter-spacing:.2em;box-shadow:0 4px 0 #1E3A26}
+.kicho button:active{transform:translateY(2px);box-shadow:0 2px 0 #1E3A26}
+.kicho small{font-size:12px;color:#5E7462}
+.pbmemo{margin-top:16px}
+.pbmemo .it{border-bottom:1px solid var(--line);padding:10px 2px}
+.pbmemo .t{font-size:12px;color:var(--dim)}
+.pbmemo b{font-family:var(--mincho);font-weight:600;font-size:14px}
+.pbmemo .memo{font-family:var(--mincho);font-size:14px;margin-top:4px;padding-left:10px;border-left:2px solid var(--amber)}
+.none{color:var(--dim);font-size:13px;text-align:center;padding:16px 0}
+
+/* ---------- 下のタブ ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(26,20,18,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav>div{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--navh)}
+.nav button{border:none;background:transparent;color:#8F7F70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;letter-spacing:.08em}
+.nav svg{width:24px;height:24px}
+.nav button[aria-current=page]{color:var(--lamp)}
+
+/* ---------- シート ---------- */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(10,7,6,.62);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);color:var(--ink);width:100%;max-width:620px;max-height:90%;overflow:auto;border-radius:20px 20px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:up .25s ease-out}
+@media(min-width:660px){.scrim{align-items:center}.sheet{border-radius:20px}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 4px;font-family:var(--mincho);font-weight:600;font-size:19px}
+.sheet .sub{font-size:13px;color:var(--soft)}
+.sheet .lbl{color:var(--soft)}
+.field{width:100%;border:1px solid #D5C6AE;background:#FFFBF4;border-radius:12px;padding:10px 12px;color:var(--ink)}
+.field:focus{outline:none;border-color:#B98A45}
+textarea.field{min-height:84px;resize:vertical;font-family:var(--mincho);line-height:1.8}
+select.field{appearance:none;-webkit-appearance:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.cdot{width:36px;height:36px;border-radius:50%;border:3px solid transparent;background:var(--c);padding:0}
+.cdot[aria-pressed=true]{border-color:var(--ink)}
+.sheet .btn{color:var(--ink);border-color:#D5C6AE;background:#fff}
+.sheet .btn.amber{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sheet .btn.warn{color:#A2412C;border-color:#E5C3BA;background:#fff}
+.sheet .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.say{display:flex;gap:10px;align-items:flex-start;background:#FFFBF4;border-radius:14px;padding:10px 12px;margin:12px 0;font-family:var(--mincho);font-size:15px}
+.say svg{width:44px;height:44px;flex:none}
+.say small{display:block;font-family:var(--maru);font-size:11px;color:var(--soft)}
+/* 図書カード */
+.card{position:relative;background:#FBF6EA;border:1px solid #D9C9A8;border-radius:4px;padding:14px 14px 12px;margin:10px 0 4px;box-shadow:0 2px 0 #E7DBC3;
+}
+.card .head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #8A6E4B;padding-bottom:6px}
+.card .head b{font-family:var(--mincho);letter-spacing:.3em;font-size:15px}
+.callno{font-family:var(--mono);font-size:11px;line-height:1.2;text-align:center;border:1px solid #8A6E4B;border-radius:3px;padding:2px 8px;background:#fff}
+.callno span{display:block}
+.card .kv{display:grid;grid-template-columns:4.4em 1fr;gap:6px;font-size:13px;line-height:28px}
+.card .kv span{border-bottom:1px solid #E7DCC6}
+.card .kv span:nth-child(odd){color:var(--soft)}
+.card .kv span:nth-child(even){font-family:var(--mincho);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.stamps div{aspect-ratio:1;border:1px dashed #D2C2A2;border-radius:4px;display:grid;place-items:center}
+.stamps .s{border:2px solid var(--stamp);border-radius:50%;width:84%;aspect-ratio:1;display:grid;place-items:center;color:var(--stamp);font-family:var(--mincho);font-size:9.5px;line-height:1.15;text-align:center;opacity:.85}
+.exlibris{position:absolute;right:10px;bottom:-14px;background:#F3E7D3;border:1px solid #B79B6E;padding:3px 8px;font-family:var(--mincho);font-size:9px;letter-spacing:.15em;color:#6E5634;transform:rotate(-2deg)}
+.prog{height:8px;border-radius:4px;background:#E2D5BF;overflow:hidden;margin:12px 0 2px}
+.prog i{display:block;height:100%;background:#B98A45}
+.slog .it{border-bottom:1px solid #E2D5BF;padding:8px 0;font-size:13px}
+.slog .memo{font-family:var(--mincho);font-size:14px;margin-top:2px}
+#toast{position:fixed;left:50%;bottom:calc(var(--navh) + 18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:var(--paper);color:var(--ink);
+  padding:9px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<main>
+  <header class="top"><h1>まるい読書室</h1><button class="gear" id="setBtn">設定</button></header>
+
+  <!-- ===== 読書室 ===== -->
+  <section id="vRoom">
+    <div class="room" id="room">
+<svg viewBox="0 0 400 300" role="img" aria-label="ランプの下の丸いテーブル。奥にまるちゃん、左にくま、右にふくろうの館長、手前があなたの席">
+  <defs>
+    <radialGradient id="lampG" cx="50%" cy="0%" r="80%"><stop offset="0" stop-color="#FFD9A0" stop-opacity=".55"/><stop offset=".55" stop-color="#FFB86B" stop-opacity=".16"/><stop offset="1" stop-color="#FFB86B" stop-opacity="0"/></radialGradient>
+    <linearGradient id="tableG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A06D47"/><stop offset="1" stop-color="#7A4E32"/></linearGradient>
+    <pattern id="fur" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#A8803F"/><circle cx="2" cy="2" r="1.2" fill="#8E6A32"/><circle cx="5" cy="5" r=".9" fill="#B9904E"/></pattern>
+    <pattern id="wp" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#2F2622"/><path d="M11 4 l2 4 -2 4 -2 -4z" fill="#372C27"/></pattern>
+    <clipPath id="win"><rect x="22" y="30" width="70" height="84" rx="35"/></clipPath>
+  </defs>
+  <rect width="400" height="300" fill="url(#wp)"/>
+  <rect y="170" width="400" height="130" fill="#2A211D"/>
+  <!-- 窓 -->
+  <g clip-path="url(#win)"><rect id="sky" x="22" y="30" width="70" height="84" fill="#1A2236"/><g id="clouds" class="hidden" fill="#FFFFFF" opacity=".75"><ellipse cx="44" cy="62" rx="12" ry="5"/><ellipse cx="52" cy="58" rx="9" ry="6"/><ellipse cx="74" cy="88" rx="10" ry="4"/></g><circle id="sun" class="hidden" cx="76" cy="52" r="7" fill="#FFE7A8"/>
+    <g id="stars"><circle class="star" cx="38" cy="52" r="1.2" fill="#F6E7C1"/><circle class="star" cx="70" cy="46" r="1" fill="#F6E7C1" style="animation-delay:-1.5s"/><circle class="star" cx="80" cy="78" r="1.3" fill="#F6E7C1" style="animation-delay:-3s"/><path d="M74 58 a9 9 0 1 0 6 15 a7 7 0 1 1 -6 -15z" fill="#F6E7C1" opacity=".85"/></g>
+    <g id="rain" class="rain hidden" stroke="#9FB2D6" stroke-width="1" stroke-linecap="round" opacity=".6">
+      <line x1="30" y1="26" x2="27" y2="38"/><line x1="44" y1="18" x2="41" y2="30" style="animation-delay:-.3s"/><line x1="58" y1="32" x2="55" y2="44" style="animation-delay:-.7s"/><line x1="72" y1="16" x2="69" y2="28" style="animation-delay:-.5s"/><line x1="86" y1="30" x2="83" y2="42" style="animation-delay:-.9s"/><line x1="36" y1="56" x2="33" y2="68" style="animation-delay:-.2s"/><line x1="66" y1="60" x2="63" y2="72" style="animation-delay:-.6s"/>
+    </g></g>
+  <rect x="22" y="30" width="70" height="84" rx="35" fill="none" stroke="#5A4335" stroke-width="5"/>
+  <path d="M57 30 V114 M22 76 H92" stroke="#5A4335" stroke-width="3"/>
+  <!-- 喫茶コーナー（棚にケトルとドリッパー） -->
+  <g transform="translate(112 66)"><rect x="0" y="34" width="62" height="5" fill="#6E4B33"/>
+    <path d="M6 34 v-14 a10 10 0 0 1 20 0 v14z" fill="#9AA3AD" stroke="#1E1714" stroke-width="1.5"/><path d="M26 22 q10 -2 12 -10" fill="none" stroke="#1E1714" stroke-width="2"/><rect x="12" y="8" width="8" height="3" fill="#1E1714"/>
+    <path d="M40 22 h16 l-5 10 h-6z" fill="#E9DCC7" stroke="#1E1714" stroke-width="1.5"/><rect x="42" y="32" width="12" height="2" fill="#1E1714"/>
+    <rect x="30" y="24" width="7" height="10" rx="1" fill="#7D4E4E"/></g>
+  <!-- 本棚 -->
+  <g transform="translate(306 36)"><rect width="76" height="104" fill="#3D2A20" stroke="#4E3628" stroke-width="3"/>
+    <path d="M0 35 H76 M0 70 H76" stroke="#4E3628" stroke-width="3"/>
+    <g><rect x="6" y="10" width="8" height="23" fill="#7D4E4E"/><rect x="15" y="14" width="7" height="19" fill="#4E6A7D"/><rect x="23" y="8" width="9" height="25" fill="#8A7A4E"/><rect x="34" y="16" width="7" height="17" fill="#5E7D5A"/><rect x="47" y="12" width="9" height="21" fill="#9A6B43" transform="rotate(-12 51 33)"/></g>
+    <g><rect x="6" y="46" width="9" height="22" fill="#4E6A7D"/><rect x="16" y="42" width="7" height="26" fill="#A0584A"/><rect x="24" y="48" width="8" height="20" fill="#6E5A7D"/><rect x="40" y="44" width="8" height="24" fill="#8A7A4E"/><rect x="49" y="47" width="7" height="21" fill="#5E7D5A"/><rect x="57" y="43" width="9" height="25" fill="#7D4E4E"/></g>
+    <g><rect x="8" y="80" width="8" height="22" fill="#8A7A4E"/><rect x="17" y="84" width="9" height="18" fill="#5E7D5A"/><circle cx="52" cy="92" r="8" fill="#5E7D5A"/><rect x="47" y="92" width="10" height="10" fill="#8C5A3A"/></g></g>
+  <!-- 暖炉（暖炉の音のとき） -->
+  <g id="fire" class="hidden" transform="translate(316 146)"><rect x="0" y="0" width="60" height="38" rx="4" fill="#3A2A22" stroke="#5A4335" stroke-width="3"/><rect x="11" y="12" width="38" height="26" rx="17" fill="#1A1210"/>
+    <path class="flame" d="M30 38 C21 34 23 24 28 19 C28 26 33 26 31 17 C40 24 41 34 30 38Z" fill="#FFB357"/><path class="flame" d="M30 38 C26 36 27 30 29 27 C30 31 33 31 32 26 C36 31 36 36 30 38Z" fill="#FFE29A" style="animation-delay:-.4s"/></g>
+  <!-- ランプ -->
+  <rect class="glow" x="0" y="40" width="400" height="260" fill="url(#lampG)"/>
+  <line x1="200" y1="0" x2="200" y2="34" stroke="#1E1714" stroke-width="2"/>
+  <path d="M176 50 L224 50 L214 34 L186 34Z" fill="#C98B4A" stroke="#1E1714" stroke-width="2"/>
+  <ellipse cx="200" cy="51" rx="12" ry="3" fill="#FFE7B8"/>
+
+  <!-- 奥の席：まるちゃん -->
+  <g transform="translate(170 100)"><g class="breathe">
+    <circle cx="30" cy="30" r="27" fill="#FFD9B8" stroke="#3A2E2A" stroke-width="3"/>
+    <path d="M12 16 Q30 -2 48 16 Q40 12 30 13 Q20 12 12 16Z" fill="#3A2E2A"/>
+    <path d="M18 31 q4 3 8 0 M34 31 q4 3 8 0" fill="none" stroke="#3A2E2A" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="14" cy="38" r="4" fill="#FF9A8A" opacity=".6"/><circle cx="46" cy="38" r="4" fill="#FF9A8A" opacity=".6"/>
+    <g transform="translate(8 40)"><path d="M0 4 L22 0 L22 22 L0 26Z" fill="#E9DCC7" stroke="#3A2E2A" stroke-width="2"/><path d="M44 4 L22 0 L22 22 L44 26Z" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/>
+      <path d="M0 4 L-2 6 L-2 28 L22 24 L46 28 L46 6 L44 4" fill="none" stroke="#C25A3E" stroke-width="3"/>
+      <path id="flipM" d="M44 4 L22 0 L22 22 L44 26Z" fill="#FFFBF4" stroke="#3A2E2A" stroke-width="1.5" opacity="0"/></g>
+  </g></g>
+  <!-- 左の席：くま（うさぎと） -->
+  <g transform="translate(26 150)"><g class="breathe b2">
+    <rect x="-6" y="40" width="70" height="60" rx="10" fill="#5A3A28"/>
+    <circle cx="12" cy="8" r="9" fill="url(#fur)" stroke="#3A2E2A" stroke-width="2.5"/><circle cx="56" cy="8" r="9" fill="url(#fur)" stroke="#3A2E2A" stroke-width="2.5"/>
+    <ellipse cx="34" cy="62" rx="26" ry="22" fill="url(#fur)" stroke="#3A2E2A" stroke-width="3"/>
+    <g class="doze"><ellipse cx="34" cy="28" rx="28" ry="25" fill="url(#fur)" stroke="#3A2E2A" stroke-width="3"/>
+      <path d="M16 25 Q22 30 28 26 M42 26 Q48 30 54 25" fill="none" stroke="#2A2220" stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="36" cy="38" rx="13" ry="10" fill="#D9CFB7" stroke="#3A2E2A" stroke-width="2"/>
+      <ellipse cx="37" cy="33.5" rx="5.6" ry="4.6" fill="#1E1A18"/><ellipse cx="35" cy="32" rx="2" ry="1.1" fill="#fff" opacity=".6"/>
+      <path d="M32 43 Q36 46 40 43" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/></g>
+    <g transform="translate(30 50) rotate(8)"><path d="M0 4 L20 0 L20 20 L0 24Z" fill="#E9DCC7" stroke="#3A2E2A" stroke-width="2"/><path d="M40 4 L20 0 L20 20 L40 24Z" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/>
+      <path d="M0 4 L-2 6 L-2 26 L20 22 L42 26 L42 6 L40 4" fill="none" stroke="#4E7A6A" stroke-width="3"/>
+      <path id="flipK" d="M40 4 L20 0 L20 20 L40 24Z" fill="#FFFBF4" stroke="#3A2E2A" stroke-width="1.5" opacity="0"/></g>
+    <g transform="translate(4 60)"><ellipse cx="6" cy="-6" rx="2.5" ry="6" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="1.5"/><ellipse cx="12" cy="-6" rx="2.5" ry="6" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="1.5"/><circle cx="9" cy="4" r="8" fill="#EAD7DC" stroke="#3A2E2A" stroke-width="2"/><circle cx="6.5" cy="4" r="1" fill="#6B5A88"/><circle cx="11.5" cy="4" r="1" fill="#6B5A88"/></g>
+  </g></g>
+  <!-- 右の席：ふくろうの館長 -->
+  <g transform="translate(306 140)"><g class="breathe b3">
+    <rect x="-4" y="40" width="70" height="56" rx="10" fill="#5A3A28"/>
+    <path d="M8 6 L14 18 L4 20Z M52 6 L46 18 L56 20Z" fill="#8A6A4E" stroke="#3A2E2A" stroke-width="2.5" stroke-linejoin="round"/>
+    <ellipse cx="30" cy="38" rx="28" ry="30" fill="#9A7A5A" stroke="#3A2E2A" stroke-width="3"/>
+    <ellipse cx="30" cy="44" rx="17" ry="20" fill="#D8C3A2"/>
+    <circle cx="20" cy="28" r="8.5" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/><circle cx="40" cy="28" r="8.5" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/>
+    <circle cx="19" cy="30" r="3" fill="#2A2220"/><circle cx="39" cy="30" r="3" fill="#2A2220"/>
+    <circle cx="20" cy="28" r="10.5" fill="none" stroke="#C9A24A" stroke-width="1.8"/><circle cx="40" cy="28" r="10.5" fill="none" stroke="#C9A24A" stroke-width="1.8"/><path d="M28.5 28 h3" stroke="#C9A24A" stroke-width="1.8"/>
+    <path d="M27 36 L30 41 L33 36Z" fill="#E8B96A" stroke="#3A2E2A" stroke-width="1.5" stroke-linejoin="round"/>
+    <g transform="translate(-12 46) rotate(-8)"><path d="M0 4 L20 0 L20 20 L0 24Z" fill="#E9DCC7" stroke="#3A2E2A" stroke-width="2"/><path d="M40 4 L20 0 L20 20 L40 24Z" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/>
+      <path d="M0 4 L-2 6 L-2 26 L20 22 L42 26 L42 6 L40 4" fill="none" stroke="#4E5A8A" stroke-width="3"/>
+      <path id="flipF" d="M40 4 L20 0 L20 20 L40 24Z" fill="#FFFBF4" stroke="#3A2E2A" stroke-width="1.5" opacity="0"/></g>
+  </g></g>
+
+  <!-- 丸いテーブル -->
+  <ellipse cx="200" cy="286" rx="130" ry="14" fill="rgba(0,0,0,.35)"/>
+  <rect x="188" y="226" width="24" height="58" fill="#5E3B26"/>
+  <ellipse cx="200" cy="214" rx="132" ry="44" fill="#5E3B26"/>
+  <ellipse cx="200" cy="208" rx="132" ry="42" fill="url(#tableG)"/>
+  <ellipse cx="200" cy="203" rx="102" ry="28" fill="none" stroke="#B88257" stroke-opacity=".35" stroke-width="2"/>
+  <!-- みんなのカップ -->
+  <g transform="translate(212 176)" id="cupM"><path d="M0 0 h14 v9 a7 5 0 0 1 -14 0z" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/><path d="M14 2 a4 4 0 0 1 0 6" fill="none" stroke="#3A2E2A" stroke-width="2"/>
+    <g class="steam" stroke="#F4EADB" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M4 -2 c-3 -5 3 -8 0 -13"/><path d="M10 -2 c3 -5 -3 -8 0 -13"/></g></g>
+  <g transform="translate(104 196)" id="cupK"><path d="M0 0 h14 v9 a7 5 0 0 1 -14 0z" fill="#CFE0D6" stroke="#3A2E2A" stroke-width="2"/><path d="M14 2 a4 4 0 0 1 0 6" fill="none" stroke="#3A2E2A" stroke-width="2"/>
+    <g class="steam" stroke="#F4EADB" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M4 -2 c-3 -5 3 -8 0 -13"/><path d="M10 -2 c3 -5 -3 -8 0 -13"/></g></g>
+  <g transform="translate(278 196)" id="cupF"><path d="M0 0 h14 v9 a7 5 0 0 1 -14 0z" fill="#E9D0B8" stroke="#3A2E2A" stroke-width="2"/><path d="M14 2 a4 4 0 0 1 0 6" fill="none" stroke="#3A2E2A" stroke-width="2"/>
+    <g class="steam" stroke="#F4EADB" stroke-width="1.5" fill="none" stroke-linecap="round"><path d="M4 -2 c-3 -5 3 -8 0 -13"/><path d="M10 -2 c3 -5 -3 -8 0 -13"/></g></g>
+  <!-- 手前の席：あなたの本とカップ -->
+  <g transform="translate(150 222)">
+    <path d="M0 8 L36 2 L36 28 L0 34Z" fill="#EDE2CF" stroke="#3A2E2A" stroke-width="2"/><path d="M72 8 L36 2 L36 28 L72 34Z" fill="#F7EFE2" stroke="#3A2E2A" stroke-width="2"/>
+    <path d="M7 14 L29 10 M7 20 L29 16 M7 26 L25 22 M43 10 L65 14 M43 16 L65 20 M43 22 L61 26" stroke="#C8B8A0" stroke-width="1.5"/>
+    <path d="M52 4 L52 -6 L58 -6 L58 5" fill="#C25A3E"/>
+  </g>
+  <g id="myCup" class="hidden" transform="translate(236 222)">
+    <ellipse cx="11" cy="16" rx="15" ry="4" fill="#E9DCC7" stroke="#3A2E2A" stroke-width="1.5"/>
+    <path d="M0 0 h22 v10 a11 7 0 0 1 -22 0z" fill="#FBF6EA" stroke="#3A2E2A" stroke-width="2"/><path d="M22 2 a5 5 0 0 1 0 8" fill="none" stroke="#3A2E2A" stroke-width="2"/>
+    <ellipse id="myDrink" cx="11" cy="1.5" rx="9.5" ry="2.2" fill="#4A2C1E"/>
+    <g id="mySteam" class="steam" stroke="#F4EADB" stroke-width="1.6" fill="none" stroke-linecap="round"><path d="M7 -3 c-3 -5 3 -8 0 -14"/><path d="M15 -3 c3 -5 -3 -8 0 -14"/></g>
+  </g>
+  <!-- あなたの椅子の背もたれ -->
+  <path d="M140 300 V284 Q200 272 260 284 V300" fill="#4E3424" stroke="#2A1E16" stroke-width="2"/>
+  <rect class="dimmer" width="400" height="300" fill="#0E0907" style="mix-blend-mode:multiply"/>
+</svg>
+    </div>
+    <p class="caption" id="caption"></p>
+
+    <div class="panel" id="prep">
+      <h2>今日の席につく</h2>
+      <span class="lbl">読む本</span>
+      <button class="bookpick" id="pickBook"></button>
+      <span class="lbl">読む時間</span>
+      <div class="chips" id="mins"></div>
+      <span class="lbl">部屋の音</span>
+      <div class="chips" id="sounds"></div>
+      <span class="lbl">音の大きさ</span>
+      <input class="vol" type="range" id="vol" min="0" max="1" step="0.05" aria-label="音の大きさ">
+      <div class="mycup" id="cupLine"></div>
+      <button class="start" id="startBtn">読みはじめる</button>
+      <p class="reads" id="reads"></p>
+    </div>
+
+    <div class="panel hidden" id="live">
+      <div class="timer"><div class="big" id="tBig">00:00</div><div class="sub" id="tSub"></div><div class="ring"><i id="tRing"></i></div></div>
+      <div class="row2"><button class="btn" id="pauseBtn">ひと休み</button><button class="btn amber" id="endBtn">ここまでにする</button></div>
+      <button class="pipbtn hidden" id="pipBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor"/></svg>小窓にして、ほかのアプリと一緒に</button>
+      <div class="pipwrap hidden" id="pipWrap"><video id="pipVideo" muted playsinline autoplay aria-label="小窓に出る画面"></video><small>↑ 小窓に出る画面です</small></div>
+      <p class="bgnote" id="bgNote"></p>
+      <div class="mycup" id="cupLine2"></div>
+      <p class="reads" id="reads2"></p>
+    </div>
+  </section>
+
+  <!-- ===== 喫茶 ===== -->
+  <section id="vCafe" class="hidden">
+    <div class="board">
+      <h2>本日の一杯</h2>
+      <div class="en">KISSA &middot; MENU</div>
+      <div id="menu"></div>
+      <p class="bnote">カフェインの量は、文部科学省「日本食品標準成分表」の100mlあたりの値から、1杯の量で計算した目安です。淹れ方や商品で変わります。</p>
+    </div>
+    <div class="slip" id="slip"></div>
+  </section>
+
+  <!-- ===== 本棚 ===== -->
+  <section id="vShelf" class="hidden">
+    <div class="shelfwrap" id="shelves"></div>
+    <p class="caption">背ラベルの数字は、図書館と同じ「日本十進分類法」の分類記号です。</p>
+  </section>
+
+  <!-- ===== きろく ===== -->
+  <section id="vLog" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="panel"><h2>この一週間</h2><div class="week" id="week"></div></div>
+    <div class="passbook" id="passbook"></div>
+    <div class="panel pbmemo"><h2>しおりのメモ</h2><div id="memos"></div></div>
+  </section>
+</main>
+
+<nav class="nav" aria-label="切り替え"><div>
+  <button data-v="vRoom" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M8 9h8l-1.5-3h-5z"/><ellipse cx="12" cy="17" rx="9" ry="3"/><path d="M12 20v2"/></svg>読書室</button>
+  <button data-v="vCafe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3c-1 1.5 1 2 0 4M12 3c-1 1.5 1 2 0 4"/></svg>喫茶</button>
+  <button data-v="vShelf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V6h3v14M10 20V4h3v16M15 20l-1-13 3-.5 2 13.5"/></svg>本棚</button>
+  <button data-v="vLog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>通帳</button>
+</div></nav>
+
+<!-- 一杯いれる -->
+<div class="brew hidden" id="brew" role="dialog" aria-modal="true" aria-live="polite">
+  <svg viewBox="0 0 200 180" aria-hidden="true">
+    <ellipse cx="100" cy="168" rx="70" ry="8" fill="rgba(0,0,0,.35)"/>
+    <!-- カップ -->
+    <path d="M62 116 h76 v24 a38 22 0 0 1 -76 0z" fill="#FBF6EA" stroke="#1E1714" stroke-width="3"/>
+    <path d="M138 122 a12 12 0 0 1 0 20" fill="none" stroke="#1E1714" stroke-width="3"/>
+    <clipPath id="cupClip"><path d="M64 118 h72 v22 a36 20 0 0 1 -72 0z"/></clipPath>
+    <rect id="brewFill" clip-path="url(#cupClip)" x="60" y="164" width="80" height="0" fill="#4A2C1E"/>
+    <!-- ドリッパー -->
+    <g id="dripper"><path d="M74 78 h52 l-14 30 h-24z" fill="#E9DCC7" stroke="#1E1714" stroke-width="3" stroke-linejoin="round"/><rect x="82" y="108" width="36" height="6" rx="2" fill="#1E1714"/>
+      <path d="M80 80 h40 l-10 22 h-20z" fill="#C9A27A"/>
+      <g class="pour" id="drops"><circle class="drop" cx="100" cy="114" r="2" fill="#4A2C1E"/><circle class="drop" cx="100" cy="114" r="2" fill="#4A2C1E" style="animation-delay:-.35s"/></g></g>
+    <!-- ケトル -->
+    <g id="kettle" style="transform-origin:150px 60px;transition:transform .8s"><path d="M132 40 h40 a6 6 0 0 1 6 6 v24 a6 6 0 0 1 -6 6 h-40 a6 6 0 0 1 -6 -6 v-24 a6 6 0 0 1 6 -6z" fill="#9AA3AD" stroke="#1E1714" stroke-width="3"/>
+      <path d="M126 56 C110 54 104 46 100 38" fill="none" stroke="#1E1714" stroke-width="4" stroke-linecap="round"/><path d="M146 40 q6 -14 18 0" fill="none" stroke="#1E1714" stroke-width="3"/></g>
+    <path class="pour" id="stream" d="M100 40 C100 54 100 66 100 80" stroke="#C9A27A" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <g class="steam" id="bSteam" stroke="#F4EADB" stroke-width="2" fill="none" stroke-linecap="round" opacity="0"><path d="M88 110 c-4 -7 4 -11 0 -18"/><path d="M110 110 c4 -7 -4 -11 0 -18"/></g>
+  </svg>
+  <div class="step" id="bStep"></div>
+  <div class="hint" id="bHint"></div>
+  <button class="btn skip" id="bSkip">すぐ飲む</button>
+</div>
+
+<!-- 本を選ぶ -->
+<div class="scrim hidden" id="chooseS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="chTitle">
+  <h3 id="chTitle">どの本を読む？</h3>
+  <div id="chList" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+  <div class="btns"><button class="btn" id="chNew">新しい本を本棚に入れる</button><button class="btn" data-close>閉じる</button></div>
+</div></div>
+
+<!-- 本の登録・図書カード -->
+<div class="scrim hidden" id="bookS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="bkTitle">
+  <h3 id="bkTitle">本棚に入れる</h3>
+  <div id="bCard"></div>
+  <div class="coverbox" id="bCover"></div>
+  <label class="lbl" for="bTitle">題名</label><input class="field" id="bTitle" maxlength="60" autocomplete="off">
+  <label class="lbl" for="bAuthor">著者（なくてもOK）</label><input class="field" id="bAuthor" maxlength="40" autocomplete="off">
+  <div class="two">
+    <div><label class="lbl" for="bPages">全部で何ページ？</label><input class="field" id="bPages" type="number" inputmode="numeric" min="0" max="20000" placeholder="例）320"></div>
+    <div><label class="lbl" for="bCur">いま何ページ？</label><input class="field" id="bCur" type="number" inputmode="numeric" min="0" max="20000" placeholder="0"></div>
+  </div>
+  <label class="lbl" for="bGenre">ジャンル（背ラベルの分類記号になります）</label>
+  <select class="field" id="bGenre"></select>
+  <span class="lbl">背表紙の色</span><div class="colors" id="bColors"></div>
+  <div id="bInfo"></div>
+  <div class="btns"><button class="btn amber" id="bSave">本棚に入れる</button><button class="btn hidden" id="bDone">読み終えた</button><button class="btn" data-close>閉じる</button><button class="btn warn hidden" id="bDel">本棚から出す</button></div>
+</div></div>
+
+<!-- 読み終えたとき -->
+<div class="scrim hidden" id="endS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="enTitle">
+  <h3 id="enTitle">おつかれさまでした</h3>
+  <div class="sub" id="enSub"></div>
+  <div class="say" id="enSay"></div>
+  <div id="enPageWrap"><label class="lbl" for="enPage">どこまで読んだ？（ページ）</label><input class="field" id="enPage" type="number" inputmode="numeric" min="0" max="20000"></div>
+  <label class="lbl" for="enMemo">しおりのメモ（なくてもOK）</label>
+  <textarea class="field" id="enMemo" maxlength="400" placeholder="心に残った一文や、思ったこと"></textarea>
+  <div class="btns"><button class="btn amber" id="enSave">しおりをはさむ</button><button class="btn" id="enSkip">記録だけ残す</button></div>
+</div></div>
+
+<!-- 設定 -->
+<div class="scrim hidden" id="setS"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+  <h3 id="stTitle">設定</h3>
+  <label class="lbl" for="sBear">くまの名前</label><input class="field" id="sBear" maxlength="12" autocomplete="off">
+  <p class="sub" style="margin-top:6px">「このあと、なにする。」と同じ場所に置いていれば、そちらの名前を最初から使います。</p>
+  <label class="lbl" for="sBed">ふだん寝る時間（カフェインの目安に使います）</label><input class="field" id="sBed" type="time" step="1800">
+  <span class="lbl">記録のバックアップ</span>
+  <p class="sub">本棚・通帳・伝票は、このiPhoneのブラウザの中だけに保存されます。どこにも送られません。</p>
+  <div class="btns"><button class="btn" id="expBtn">バックアップを保存</button><label class="btn" style="position:relative;overflow:hidden">バックアップから戻す<input type="file" id="impIn" accept=".json,application/json" style="position:absolute;inset:0;opacity:0;font-size:16px"></label></div>
+  <div class="btns"><button class="btn" data-close>閉じる</button></div>
+</div></div>
+
+<div class="done-ov hidden" id="doneOv" role="dialog" aria-modal="true" aria-labelledby="dnTitle">
+  <div class="wrap"><div id="dnCover"></div><div class="dstamp">読了</div></div>
+  <h3 id="dnTitle"></h3><p id="dnSub"></p><div class="say" id="dnSay"></div>
+  <div class="row2"><button class="btn amber" id="dnOk">本棚にならべる</button></div>
+</div>
+<audio id="ambEl" loop playsinline preload="auto"></audio>
+<audio id="bellEl" playsinline preload="auto"></audio>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   小道具
+   ========================================================= */
+const $=id=>document.getElementById(id);
+function h(tag,props,...kids){const e=document.createElement(tag);if(props)for(const[k,v]of Object.entries(props)){
+  if(v==null||v===false)continue;
+  if(k==='style'){for(const[sk,sv]of Object.entries(v)){if(sk.startsWith('--'))e.style.setProperty(sk,sv);else e.style[sk]=sv}}
+  else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else if(k==='text')e.textContent=v;else e.setAttribute(k,v)}
+  for(const c of kids)if(c!=null)e.append(c);return e}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2200)}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const W='日月火水木金土';
+const str=(v,n)=>typeof v==='string'?v.trim().slice(0,n):'';
+const num=(v,max)=>{const n=Math.floor(Number(v));return Number.isFinite(n)&&n>=0?Math.min(n,max):0};
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const hm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const SPINE=['#7D4E4E','#4E6A7D','#5E7D5A','#8A7A4E','#6E5A7D','#A0584A','#3F5B5B','#8C6B4F'];
+
+/* 日本十進分類法（NDC）にもとづく、ジャンルと分類記号 */
+const GENRES=[['913','小説'],['914','エッセイ・随筆'],['911','詩・短歌・俳句'],['933','英米の小説'],['726','漫画・絵本'],['210','日本の歴史'],['290','旅・地理・紀行'],
+  ['140','心理学'],['100','哲学'],['400','自然科学'],['596','料理'],['336','仕事・経営'],['700','芸術'],['000','その他']];
+
+/* =========================================================
+   保存
+   ========================================================= */
+const KEY='dokusho.v1';
+let D;try{D=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!D||typeof D!=='object')D={};
+D=Object.assign({books:[],sessions:[],drinks:[],prefs:{},live:null,kicho:0},D);
+D.prefs=Object.assign({mins:25,sound:'rain',vol:.5,bear:'',bookId:'',bed:'23:00'},D.prefs||{});
+['books','sessions','drinks'].forEach(k=>{if(!Array.isArray(D[k]))D[k]=[]});
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){toast('保存できませんでした')}}
+function bearName(){if(D.prefs.bear)return D.prefs.bear;try{const k=JSON.parse(localStorage.getItem('konoato.v1'));const n=k&&typeof k.bearName==='string'?k.bearName.trim().slice(0,12):'';if(n)return n}catch(e){}return 'くまさん'}
+const book=id=>D.books.find(b=>b.id===id);
+/* 表紙の写真は、ブラウザの中の別の箱（IndexedDB）にしまう */
+const CV={db:null,open(){return this.db?Promise.resolve(this.db):new Promise((ok,ng)=>{if(!window.indexedDB)return ng(Error('no idb'));const r=indexedDB.open('dokusho-covers',1);r.onupgradeneeded=()=>r.result.createObjectStore('c');r.onsuccess=()=>{this.db=r.result;ok(this.db)};r.onerror=()=>ng(r.error)})},
+  tx(m,fn){return this.open().then(d=>new Promise((ok,ng)=>{const t=d.transaction('c',m),q=fn(t.objectStore('c'));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>ng(t.error)}))},
+  put(id,b){return this.tx('readwrite',s=>s.put(b,id))},get(id){return this.tx('readonly',s=>s.get(id))},del(id){return this.tx('readwrite',s=>s.delete(id))}};
+const coverUrl=new Map();
+async function loadCovers(){for(const b of D.books){if(b.hasCover&&!coverUrl.has(b.id)){try{const bl=await CV.get(b.id);if(bl)coverUrl.set(b.id,URL.createObjectURL(bl));else b.hasCover=false}catch(e){}}}}
+function setCoverUrl(id,blob){const o=coverUrl.get(id);if(o)URL.revokeObjectURL(o);if(blob)coverUrl.set(id,URL.createObjectURL(blob));else coverUrl.delete(id)}
+/* 写真を描き直して小さくする（撮影場所などの情報はここで消える）。ついでに背表紙の色を拾う */
+function shrinkCover(file){return new Promise((ok,ng)=>{const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{URL.revokeObjectURL(u);const W=480,H=720,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+    const s=Math.max(W/im.naturalWidth,H/im.naturalHeight),sw=W/s,sh=H/s;x.drawImage(im,(im.naturalWidth-sw)/2,(im.naturalHeight-sh)/2,sw,sh,0,0,W,H);
+    const t=document.createElement('canvas');t.width=12;t.height=18;const tx=t.getContext('2d');tx.drawImage(c,0,0,12,18);const d=tx.getImageData(0,0,12,18).data;
+    let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);const w=1+(mx-mn)/40;r+=d[i]*w;g+=d[i+1]*w;b+=d[i+2]*w;n+=w}
+    c.toBlob(bl=>bl?ok({blob:bl,color:spineColor(r/n,g/n,b/n)}):ng(Error('変換できませんでした')),'image/jpeg',.82)};
+  im.onerror=()=>{URL.revokeObjectURL(u);ng(Error('この写真は読めませんでした'))};im.src=u})}
+function spineColor(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b);let h=0,s=0,l=(mx+mn)/2;
+  if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}
+  l=Math.min(.42,Math.max(.26,l*.75));s=Math.min(.55,s);
+  const f=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};
+  const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,hx=v=>Math.round(v*255).toString(16).padStart(2,'0');
+  return '#'+hx(f(p,q,h+1/3))+hx(f(p,q,h))+hx(f(p,q,h-1/3))}
+/* 表紙（写真がなければ、題名だけの布張りの表紙） */
+function coverEl(b,small){const c=h('div',{class:'cover',style:{'--c':b?b.color:'#5A4A3E'}});const u=b&&coverUrl.get(b.id);
+  if(u)c.append(h('img',{src:u,alt:''}));else if(b&&!small)c.append(h('div',{class:'gen'},h('b',{text:b.title}),b.author?h('small',{text:b.author}):null));
+  return c}
+
+/* =========================================================
+   みんなが読んでいる本
+   ========================================================= */
+const THEIR={maru:['司会の心得','拍手の歴史','よく通る声の本','ぱんぱかぱーん大全','段取り上手のひみつ'],kuma:['ねむりのすすめ','うさぎと暮らす','はちみつ百科','おひるねの技術','毛布の選び方'],fuku:['夜の図書目録','星の名前','めがねの手入れ','静けさについて','月の満ち欠け']};
+let their={};
+function shuffleTheir(){their={maru:pick(THEIR.maru),kuma:pick(THEIR.kuma),fuku:pick(THEIR.fuku)}}
+function readsText(){return `奥の席のまるちゃんは『${their.maru}』、左の${bearName()}は『${their.kuma}』、右の館長は『${their.fuku}』。`}
+
+/* =========================================================
+   部屋の音（その場で作る。外からは何も読み込まない）
+   ========================================================= */
+let AC=null,master=null,ambient=null,timers=[];
+function audioInit(){try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.connect(AC.destination)}if(AC.state==='suspended')AC.resume();master.gain.value=D.prefs.vol*0.9}catch(e){}}
+function noise(sec,brown){const b=AC.createBuffer(1,AC.sampleRate*sec,AC.sampleRate),d=b.getChannelData(0);let last=0;
+  for(let i=0;i<d.length;i++){const w=Math.random()*2-1;if(brown){last=(last+.02*w)/1.02;d[i]=last*3.5}else d[i]=w}return b}
+function loopNoise(brown,type,freq,q,gain){const s=AC.createBufferSource();s.buffer=noise(4,brown);s.loop=true;const f=AC.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;
+  const g=AC.createGain();g.gain.value=gain;s.connect(f);f.connect(g);g.connect(master);s.start();return{s,g,f}}
+function stopAmbient(){timers.forEach(clearTimeout);timers=[];if(ambient){ambient.forEach(n=>{try{n.g.gain.setTargetAtTime(0,AC.currentTime,.4);const s=n.s;setTimeout(()=>{try{s.stop()}catch(e){}},1500)}catch(e){}})}ambient=null}
+function every(minMs,maxMs,fn){const go=()=>{fn();timers.push(setTimeout(go,minMs+Math.random()*(maxMs-minMs)))};timers.push(setTimeout(go,minMs+Math.random()*(maxMs-minMs)))}
+function blip(freq,len,vol,type){const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=freq;const t=AC.currentTime;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+len);o.connect(g);g.connect(master);o.start(t);o.stop(t+len+.05)}
+function burst(freq,len,vol){const s=AC.createBufferSource();s.buffer=noise(len+.05);const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=1.2;
+  const g=AC.createGain(),t=AC.currentTime;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+len);s.connect(f);f.connect(g);g.connect(master);s.start(t)}
+function pageSound(){if(!AC||D.prefs.sound==='none')return;const s=AC.createBufferSource();s.buffer=noise(.5);const f=AC.createBiquadFilter();f.type='bandpass';f.Q.value=.7;
+  const t=AC.currentTime;f.frequency.setValueAtTime(900,t);f.frequency.linearRampToValueAtTime(3200,t+.35);const g=AC.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.08);g.gain.exponentialRampToValueAtTime(.0001,t+.42);
+  s.connect(f);f.connect(g);g.connect(master);s.start(t)}
+function startAmbient(){
+  stopAmbient();if(!AC||D.prefs.sound==='none')return;const k=D.prefs.sound;
+  if(k==='rain'){ambient=[loopNoise(false,'lowpass',1300,.4,.22),loopNoise(true,'lowpass',500,.3,.25)];every(120,600,()=>blip(1800+Math.random()*1600,.05,.02))}
+  if(k==='fire'){ambient=[loopNoise(true,'lowpass',380,.5,.5)];every(80,700,()=>burst(1500+Math.random()*2500,.03+Math.random()*.05,.06+Math.random()*.08));every(2500,7000,()=>burst(300,.25,.08))}
+  if(k==='clock'){ambient=[loopNoise(true,'lowpass',250,.3,.12)];const tick=()=>{blip(2400,.03,.035,'triangle');blip(1200,.05,.02)};every(1000,1000,tick)}
+}
+function bell(){if(!AC)return;[[523.25,.18],[784,.1],[1046.5,.05]].forEach(([f,v],i)=>{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+i*.02;o.frequency.value=f;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+3.2);o.connect(g);g.connect(master);o.start(t);o.stop(t+3.3)})}
+
+
+/* =========================================================
+   バックグラウンド用：部屋の音を、くり返し再生できる音声ファイルにする
+   （iPhoneは、画面を閉じるとその場で作る音は止まるが、音声ファイルは流れつづける）
+   ========================================================= */
+const SR=22050,LOOP=30,XF=2;
+const ambCache={};
+function rnd(seed){let x=seed||1;return()=>{x^=x<<13;x^=x>>17;x^=x<<5;return((x>>>0)%100000)/100000}}
+async function renderAmbient(kind){
+  const len=LOOP+XF,OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!OC)return null;
+  const oc=new OC(1,SR*len,SR),out=oc.createGain();out.gain.value=1;out.connect(oc.destination);
+  const nb=(sec,brown)=>{const b=oc.createBuffer(1,SR*sec,SR),d=b.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){const w=Math.random()*2-1;if(brown){l=(l+.02*w)/1.02;d[i]=l*3.5}else d[i]=w}return b};
+  const bed=(brown,type,f,q,g)=>{const s=oc.createBufferSource();s.buffer=nb(len,brown);const fl=oc.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const gg=oc.createGain();gg.gain.value=g;s.connect(fl);fl.connect(gg);gg.connect(out);s.start(0)};
+  const tone=(t,f,l,v,type)=>{const o=oc.createOscillator(),g=oc.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+l);o.connect(g);g.connect(out);o.start(t);o.stop(t+l+.05)};
+  const pop=(t,f,l,v)=>{const s=oc.createBufferSource();s.buffer=nb(l+.06);const fl=oc.createBiquadFilter();fl.type='bandpass';fl.frequency.value=f;fl.Q.value=1.2;const g=oc.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+l);s.connect(fl);fl.connect(g);g.connect(out);s.start(t)};
+  if(kind==='rain'){bed(false,'lowpass',1300,.4,.22);bed(true,'lowpass',500,.3,.25);for(let t=.1;t<len-.2;t+=.12+Math.random()*.5)tone(t,1800+Math.random()*1600,.05,.02)}
+  if(kind==='fire'){bed(true,'lowpass',380,.5,.5);for(let t=.1;t<len-.2;t+=.08+Math.random()*.6)pop(t,1500+Math.random()*2500,.03+Math.random()*.05,.06+Math.random()*.08);for(let t=1;t<len-.5;t+=2.5+Math.random()*4.5)pop(t,300,.25,.08)}
+  if(kind==='clock'){bed(true,'lowpass',250,.3,.12);for(let t=0;t<len;t+=1){tone(t,2400,.03,.035,'triangle');tone(t,1200,.05,.02)}}
+  const buf=await oc.startRendering(),d=buf.getChannelData(0),N=SR*LOOP,X=SR*XF,o=new Float32Array(N);
+  /* つなぎ目が聞こえないように、最後の2秒を最初の2秒に重ねる */
+  for(let i=0;i<N;i++)o[i]=d[i];
+  if(kind!=='clock')for(let i=0;i<X;i++){const a=i/X;o[i]=d[i]*Math.sqrt(a)+d[N+i]*Math.sqrt(1-a)}
+  return o;
+}
+function toWav(f,vol){const n=f.length,b=new ArrayBuffer(44+n*2),v=new DataView(b);const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,SR,true);v.setUint32(28,SR*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){const x=Math.max(-1,Math.min(1,f[i]*vol));v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true)}return new Blob([b],{type:'audio/wav'})}
+let ambUrl=null,ambKey='';
+async function prepareAmbient(){
+  const k=D.prefs.sound,vol=Math.round(D.prefs.vol*20)/20,key=k+':'+vol;if(k==='none'){ambKey='';return null}
+  if(key===ambKey&&ambUrl)return ambUrl;
+  if(!ambCache[k])ambCache[k]=await renderAmbient(k);if(!ambCache[k])return null;
+  if(ambUrl)URL.revokeObjectURL(ambUrl);ambUrl=URL.createObjectURL(toWav(ambCache[k],vol*1.6));ambKey=key;return ambUrl}
+/* 終わりの鐘も音声ファイルにしておく（画面を閉じていても鳴りやすい） */
+async function prepareBell(){if($('bellEl').src)return;const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;if(!OC)return;
+  const oc=new OC(1,SR*4,SR);[[523.25,.3],[784,.16],[1046.5,.08]].forEach(([f,v],i)=>{const o=oc.createOscillator(),g=oc.createGain(),t=.05+i*.02;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+3.5);o.connect(g);g.connect(oc.destination);o.start(t);o.stop(t+3.6)});
+  const buf=await oc.startRendering();$('bellEl').src=URL.createObjectURL(toWav(buf.getChannelData(0),1))}
+async function playAmbientEl(){const el=$('ambEl');try{const u=await prepareAmbient();if(!u){el.pause();el.removeAttribute('src');return}if(el.src!==u){el.src=u}await el.play()}catch(e){}}
+function stopAmbientEl(){const el=$('ambEl');try{el.pause()}catch(e){}}
+/* ロック画面や小窓のボタンから、ひと休み・つづきを操作できるように */
+function mediaSession(){if(!('mediaSession' in navigator))return;const b=book(D.live&&D.live.bookId);
+  try{navigator.mediaSession.metadata=new MediaMetadata({title:b?`『${b.title}』を読書中`:'読書中',artist:'まるい読書室',album:SOUNDS.find(x=>x[0]===D.prefs.sound)[1]});
+    navigator.mediaSession.setActionHandler('play',()=>{if(D.live&&D.live.paused)$('pauseBtn').click()});
+    navigator.mediaSession.setActionHandler('pause',()=>{if(D.live&&!D.live.paused)$('pauseBtn').click()});
+    navigator.mediaSession.playbackState=D.live&&!D.live.paused?'playing':'paused'}catch(e){}}
+
+/* =========================================================
+   小窓（ピクチャ・イン・ピクチャ）
+   タイマーと部屋を絵にして、それを映像として小窓に出す
+   ========================================================= */
+const pipCanvas=document.createElement('canvas');pipCanvas.width=480;pipCanvas.height=270;
+let pipStream=null,pipOn=false;
+function pipSupported(){const v=$('pipVideo');return !!(pipCanvas.captureStream&&(document.pictureInPictureEnabled||(v.webkitSupportsPresentationMode&&v.webkitSupportsPresentationMode('picture-in-picture'))))}
+function drawPip(){
+  const c=pipCanvas.getContext('2d'),W=480,H=270,L=D.live;
+  const g=c.createRadialGradient(W/2,0,10,W/2,0,W*.75);g.addColorStop(0,'#5A4330');g.addColorStop(1,'#231C19');c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.fillStyle='rgba(255,217,160,.18)';c.beginPath();c.ellipse(W/2,232,190,34,0,0,Math.PI*2);c.fill();
+  c.strokeStyle='#1E1714';c.lineWidth=2;c.beginPath();c.moveTo(W/2,0);c.lineTo(W/2,22);c.stroke();
+  c.fillStyle='#C98B4A';c.beginPath();c.moveTo(W/2-22,40);c.lineTo(W/2+22,40);c.lineTo(W/2+13,22);c.lineTo(W/2-13,22);c.closePath();c.fill();
+  c.fillStyle='#FFE7B8';c.beginPath();c.ellipse(W/2,41,10,3,0,0,Math.PI*2);c.fill();
+  const M='"Hiragino Mincho ProN","Yu Mincho",serif';c.textAlign='center';
+  let big='--:--',sub='まるい読書室';
+  if(L){const s=Math.floor(elapsedMs()/1000);if(L.mins){const left=Math.max(0,L.mins*60-s);big=pad(Math.floor(left/60))+':'+pad(left%60)}else big=pad(Math.floor(s/60))+':'+pad(s%60);
+    const b=book(L.bookId);sub=(L.paused?'ひと休み中　':'')+(b?'『'+b.title+'』':'読書中')}
+  c.fillStyle='#FFD9A0';c.font='600 92px '+M;c.fillText(big,W/2,158);
+  c.fillStyle='#BBA996';c.font='22px '+M;c.fillText(sub.length>22?sub.slice(0,21)+'…':sub,W/2,205);
+  if(L&&L.mins){c.fillStyle='rgba(243,231,211,.15)';c.fillRect(90,226,300,4);c.fillStyle='#E8B96A';c.fillRect(90,226,300*Math.min(1,elapsedMs()/(L.mins*60000)),4)}
+}
+function preparePip(){
+  if(!pipSupported())return;const v=$('pipVideo');drawPip();
+  try{if(!pipStream){pipStream=pipCanvas.captureStream(4);v.srcObject=pipStream}const p=v.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+}
+/* 押した瞬間に、待たずにそのまま小窓を頼む */
+function openPip(){
+  const v=$('pipVideo');
+  if(!pipStream)preparePip();
+  if(v.paused){try{v.play()}catch(e){}}
+  try{
+    if(typeof v.webkitSetPresentationMode==='function'&&v.webkitSupportsPresentationMode&&v.webkitSupportsPresentationMode('picture-in-picture')){
+      v.webkitSetPresentationMode('picture-in-picture');
+      setTimeout(()=>{if(v.webkitPresentationMode!=='picture-in-picture')toast('小窓を開けませんでした。もう一度押してみてください')},1200);return}
+    if(v.requestPictureInPicture){v.requestPictureInPicture().then(()=>{pipOn=true}).catch(err=>toast(`小窓を開けませんでした（${err&&err.name||'不明'}）`));return}
+    toast('この画面では、小窓が使えないようです');
+  }catch(err){toast(`小窓を開けませんでした（${err&&err.name||'不明'}）`)}
+}
+$('pipBtn').onclick=openPip;
+$('pipVideo').addEventListener('leavepictureinpicture',()=>{pipOn=false});
+$('pipVideo').addEventListener('webkitpresentationmodechanged',e=>{pipOn=e.target.webkitPresentationMode==='picture-in-picture'});
+setInterval(()=>{if(pipOn||D.live)drawPip()},500);
+
+
+/* =========================================================
+   喫茶
+   1杯の量 × 100mlあたりのカフェイン（日本食品標準成分表）で計算した目安
+   ========================================================= */
+const DRINKS=[
+ {k:'drip',sec:'珈琲',name:'ハンドドリップ',desc:'ゆっくり蒸らして、細く注ぐ',ml:150,mg:90,color:'#4A2C1E',kind:'drip'},
+ {k:'aulait',sec:'珈琲',name:'カフェオレ',desc:'珈琲100ml＋あたためた牛乳',ml:200,mg:60,color:'#A0724E',kind:'drip'},
+ {k:'tea',sec:'お茶',name:'紅茶',desc:'ポットで3分',ml:150,mg:45,color:'#A3462A',kind:'pot'},
+ {k:'sencha',sec:'お茶',name:'せん茶',desc:'少しさましたお湯で',ml:150,mg:30,color:'#9DB86A',kind:'pot'},
+ {k:'hojicha',sec:'お茶',name:'ほうじ茶',desc:'香ばしく、やさしい',ml:150,mg:30,color:'#9A5B32',kind:'pot'},
+ {k:'cocoa',sec:'あまいもの',name:'ココア',desc:'粉5gを、ゆっくり練って',ml:150,mg:7,color:'#6E3B2A',kind:'pot'},
+ {k:'mugi',sec:'ノンカフェイン',name:'麦茶',desc:'夜でも安心',ml:150,mg:0,color:'#C08A4A',kind:'pot'},
+ {k:'sayu',sec:'ノンカフェイン',name:'白湯',desc:'からだがぽかぽか',ml:150,mg:0,color:'#E8E2D6',kind:'pot'},
+ {k:'energy',sec:'眠気ざまし',name:'エナジードリンク',desc:'250ml缶（100mlあたり32mg）',ml:250,mg:80,color:'#D9C46A',kind:'can'}
+];
+const drink=k=>DRINKS.find(d=>d.k===k);
+function cupIcon(c,can){return can?`<svg viewBox="0 0 40 40"><rect x="13" y="6" width="14" height="28" rx="3" fill="#C9D1D8" stroke="#EDEAE0" stroke-width="1.5"/><rect x="13" y="13" width="14" height="12" fill="${c}"/><rect x="15" y="4" width="10" height="3" rx="1" fill="#EDEAE0"/></svg>`
+  :`<svg viewBox="0 0 40 40"><path d="M8 14 h20 v8 a10 8 0 0 1 -20 0z" fill="none" stroke="#EDEAE0" stroke-width="1.8"/><path d="M28 16 a4 4 0 0 1 0 7" fill="none" stroke="#EDEAE0" stroke-width="1.8"/><ellipse cx="18" cy="15" rx="9" ry="2" fill="${c}"/><path d="M14 10 c-2 -3 2 -4 0 -7 M21 10 c-2 -3 2 -4 0 -7" fill="none" stroke="#EDEAE0" stroke-width="1.3" stroke-linecap="round" opacity=".7"/><ellipse cx="18" cy="31" rx="13" ry="2.5" fill="none" stroke="#EDEAE0" stroke-width="1.3"/></svg>`}
+function renderMenu(){
+  const box=$('menu');box.replaceChildren();let last='';
+  DRINKS.forEach(d=>{if(d.sec!==last){last=d.sec;box.append(h('div',{class:'sec',text:d.sec}))}
+    const b=h('button',{class:'mi',onclick:()=>brew(d)});b.innerHTML=cupIcon(d.color,d.kind==='can');
+    b.append(h('span',null,h('b',{text:d.name}),h('small',{text:d.desc})),h('span',{class:'mg'+(d.mg?'':' zero'),text:d.mg?`カフェイン${d.mg}mg`:'ノンカフェイン'}));box.append(b)});
+}
+const todayDrinks=()=>{const t=ymd(new Date());return D.drinks.filter(x=>ymd(new Date(x.at))===t)};
+const bedMin=()=>{const m=/^(\d{1,2}):(\d{2})$/.exec(D.prefs.bed||'');return m?(+m[1])*60+(+m[2]):23*60};
+function renderSlip(){
+  const list=todayDrinks().sort((a,b)=>a.at-b.at),total=list.reduce((a,x)=>a+x.mg,0),now=new Date();
+  const s=$('slip');s.replaceChildren();
+  s.append(h('div',{class:'stampmark'},'まるい',h('br'),'喫茶'),h('h3',{text:'御 伝 票'}),h('div',{class:'no',text:`No.${String(now.getMonth()+1).padStart(2,'0')}${pad(now.getDate())}　${now.getMonth()+1}月${now.getDate()}日（${W[now.getDay()]}）`}));
+  if(!list.length){s.append(h('div',{class:'empty',text:'今日はまだ、何も飲んでいません。'}))}
+  else s.append(h('div',{class:'rows'},...list.map(x=>{const d=drink(x.k);return h('div',{class:'r'},h('span',{class:'t',text:hm(x.at)}),h('span',{text:d?d.name:'一杯'}),h('span',{class:'m',text:x.mg?x.mg+'mg':'—'}),
+    h('button',{class:'x','aria-label':'この一杯を伝票から消す',text:'×',onclick:()=>{D.drinks=D.drinks.filter(y=>y!==x);save();renderSlip();paintCup()}}))})));
+  s.append(h('div',{class:'sum'},h('span',{text:'今日のカフェイン'}),h('b',{text:total+'mg'})));
+  const g=h('div',{class:'gauge'},h('i',{style:{width:Math.min(100,total/400*100)+'%'}}));s.append(g);
+  const cut=bedMin()-6*60,nm=now.getHours()*60+now.getMinutes();
+  let tip=`健康な大人の目安は1日400mgまで。今日はあと${Math.max(0,400-total)}mgです。`;
+  if(total>=400)tip='今日はもう目安の400mgに届きました。ここからは、麦茶や白湯にしておきましょう。';
+  else if(nm>=cut)tip+=`　そろそろ寝る時間が近いので、ここからはノンカフェインがおすすめです。`;
+  else tip+=`　${pad(Math.floor(((cut%1440)+1440)%1440/60))}:${pad(((cut%60)+60)%60)}ごろからは、ひかえめにすると眠りやすくなります。`;
+  s.append(h('div',{class:'hint',text:tip}));
+}
+/* 一杯いれる：お湯をわかす → 蒸らす → 注ぐ */
+let brewing=null;
+async function brew(d){
+  audioInit();brewing=d;const B=$('brew');B.classList.remove('hidden');
+  const fill=$('brewFill'),k=$('kettle'),st=$('stream'),dr=$('drops'),sm=$('bSteam'),dp=$('dripper');
+  fill.setAttribute('fill',d.color);fill.setAttribute('height','0');fill.setAttribute('y','164');k.style.transform='';st.classList.remove('on');dr.classList.remove('on');sm.setAttribute('opacity','0');
+  dp.style.display=d.kind==='drip'?'':'none';k.style.display=d.kind==='can'?'none':'';
+  const say=(a,b)=>{$('bStep').textContent=a;$('bHint').textContent=b||''};
+  const wait=ms=>new Promise(r=>{brew.t=setTimeout(r,ms)});
+  if(d.kind==='can'){say('プシュッ','缶をあけます');if(AC){burstSound(2600,.25,.12)}await wait(900);if(brewing!==d)return;
+    say('コップにそそぐ');fill.setAttribute('height','40');fill.setAttribute('y','124');await wait(2400)}
+  else if(d.kind==='drip'){say('お湯をわかす','ちょうど90℃くらい');await wait(1400);if(brewing!==d)return;
+    say('蒸らす','粉がふくらむまで、20秒ほど待ちます');k.style.transform='rotate(-24deg)';st.classList.add('on');pourSound(.8);await wait(900);st.classList.remove('on');await wait(1200);if(brewing!==d)return;
+    say('細く、のの字に注ぐ','3回に分けて');st.classList.add('on');dr.classList.add('on');pourSound(2.2);fill.setAttribute('height','40');fill.setAttribute('y','124');await wait(2400);st.classList.remove('on');k.style.transform='';await wait(600)}
+  else{say('お湯をわかす');await wait(1200);if(brewing!==d)return;
+    say(d.k==='sayu'?'そそぐ':'ポットで蒸らす',d.k==='tea'?'3分のつもりで':'');k.style.transform='rotate(-24deg)';st.classList.add('on');pourSound(2);fill.setAttribute('height','40');fill.setAttribute('y','124');await wait(2400);st.classList.remove('on');k.style.transform=''}
+  if(brewing!==d)return;dr.classList.remove('on');finishBrew(d);
+}
+function finishBrew(d){
+  clearTimeout(brew.t);const B=$('brew');$('brewFill').setAttribute('height','40');$('brewFill').setAttribute('y','124');$('bSteam').setAttribute('opacity',d.kind==='can'?'0':'1');
+  $('bStep').textContent=`${d.name}、どうぞ`;$('bHint').textContent='あなたの席に置いておきました';
+  D.drinks.push({id:uid(),k:d.k,mg:d.mg,at:Date.now()});if(D.drinks.length>500)D.drinks=D.drinks.slice(-500);save();
+  if(AC)blip(1800,.5,.04);brewing=null;
+  setTimeout(()=>{B.classList.add('hidden');renderSlip();paintCup();sipAll()},1300);
+}
+$('bSkip').onclick=()=>{if(brewing){const d=brewing;brewing=null;finishBrew(d)}};
+function pourSound(sec){if(!AC||D.prefs.sound==='none'&&false)return;const s=AC.createBufferSource();s.buffer=noise(sec+.2);const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1100;f.Q.value=.6;
+  const g=AC.createGain(),t=AC.currentTime;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.08,t+.2);g.gain.setValueAtTime(.08,t+sec-.2);g.gain.exponentialRampToValueAtTime(.0001,t+sec);s.connect(f);f.connect(g);g.connect(master);s.start(t)}
+function burstSound(f,l,v){burst(f,l,v)}
+/* あなたのカップ：淹れてから冷めていく */
+function lastDrink(){return D.drinks.length?D.drinks[D.drinks.length-1]:null}
+function paintCup(){
+  const x=lastDrink(),cup=$('myCup'),age=x?(Date.now()-x.at)/60000:999;
+  if(!x||age>180){cup.classList.add('hidden')}else{cup.classList.remove('hidden');const d=drink(x.k);$('myDrink').setAttribute('fill',d?d.color:'#4A2C1E');
+    $('mySteam').style.opacity=d&&d.kind==='can'?0:Math.max(0,1-age/30);if(age>60)$('myDrink').setAttribute('ry','1.2')}
+  const line=t=>{const el=$(t);el.replaceChildren();
+    if(!x||age>180){el.append(h('span',{text:'カップは空です。'}),h('button',{text:'一杯いれる',onclick:()=>go('vCafe')}));return}
+    const d=drink(x.k),warm=d&&d.kind==='can'?'よく冷えています':age<10?'あつあつです':age<30?'ちょうど飲みごろです':'すっかり冷めました';
+    el.append(h('span',null,'手もとの',h('b',{text:d?d.name:'一杯'}),`、${warm}`),h('button',{text:age<30?'おかわり':'いれなおす',onclick:()=>go('vCafe')}))};
+  line('cupLine');line('cupLine2');
+}
+/* みんなもひとくち */
+function sipAll(){['cupM','cupK','cupF'].forEach((id,i)=>setTimeout(()=>{const c=$(id);c.classList.remove('sip');void c.getBoundingClientRect();c.classList.add('sip')},400+i*700))}
+
+/* =========================================================
+   部屋の絵
+   ========================================================= */
+function paintRoom(){
+  const hr=new Date().getHours(),rain=D.prefs.sound==='rain',night=hr<5||hr>=19,dusk=hr>=17&&hr<19,dawn=hr>=5&&hr<7;
+  $('sky').setAttribute('fill',rain?(night?'#1C2433':'#5E6E82'):night?'#1A2236':dusk?'#D9895E':dawn?'#E3B29A':'#9CC5E0');
+  $('rain').classList.toggle('hidden',!rain);$('stars').classList.toggle('hidden',rain||!night);
+  $('clouds').classList.toggle('hidden',rain||night);$('sun').classList.toggle('hidden',rain||night||dusk);
+  $('fire').classList.toggle('hidden',D.prefs.sound!=='fire')}
+setInterval(paintRoom,5*60*1000);
+let flipTimer=null;
+function scheduleFlip(){clearTimeout(flipTimer);flipTimer=setTimeout(()=>{
+  if(Math.random()<.25){const c=$(pick(['cupM','cupK','cupF']));c.classList.remove('sip');void c.getBoundingClientRect();c.classList.add('sip')}
+  else{const el=$(pick(['flipM','flipK','flipF']));if(el&&!matchMedia('(prefers-reduced-motion: reduce)').matches){el.style.opacity=1;el.classList.remove('flip');void el.getBoundingClientRect();el.classList.add('flip');setTimeout(()=>{el.style.opacity=0;el.classList.remove('flip')},1150);if(D.live&&!D.live.paused)pageSound()}}
+  scheduleFlip()},7000+Math.random()*16000)}
+
+/* =========================================================
+   読書室：準備
+   ========================================================= */
+const MINS=[[15,'15分'],[25,'25分'],[45,'45分'],[60,'1時間'],[0,'じぶんで止める']];
+const SOUNDS=[['rain','雨の夜'],['fire','暖炉'],['clock','時計の音'],['none','しずか']];
+function renderPrep(){
+  const b=book(D.prefs.bookId);
+  $('pickBook').replaceChildren(b&&coverUrl.get(b.id)?h('span',{class:'thumb',style:{'--c':b.color}},h('img',{src:coverUrl.get(b.id),alt:''})):h('span',{class:'sp',style:{'--c':b?b.color:'rgba(243,231,211,.25)'}}),
+    h('span',null,h('b',{text:b?b.title:'本を選ばずに読む'}),h('small',{text:b?(b.pages?`${b.current||0} / ${b.pages}ページ`:'ページ数は未登録')+(b.author?'　'+b.author:''):'押すと、本棚から選べます'})));
+  $('mins').replaceChildren(...MINS.map(([m,l])=>h('button',{class:'chip','aria-pressed':String(D.prefs.mins===m),text:l,onclick:()=>{D.prefs.mins=m;save();renderPrep()}})));
+  $('sounds').replaceChildren(...SOUNDS.map(([k,l])=>h('button',{class:'chip','aria-pressed':String(D.prefs.sound===k),text:l,onclick:()=>{D.prefs.sound=k;save();renderPrep();paintRoom();if(D.live&&!D.live.paused){playAmbientEl();mediaSession()}}})));
+  $('vol').value=D.prefs.vol;$('reads').textContent=readsText();paintCup();
+  const hr=new Date().getHours();
+  $('caption').textContent=hr<5?'夜ふけの読書室。手前の席が、あなたの席です。':hr<11?'朝の読書室。まだ少し眠そうなひともいます。':hr<17?'昼下がりの読書室。ランプはつけたままです。':'夜の読書室。手前の席が、あなたの席です。';
+}
+$('vol').addEventListener('input',e=>{D.prefs.vol=Number(e.target.value);save();if(master)master.gain.value=D.prefs.vol*0.9});
+$('vol').addEventListener('change',()=>{if(D.live&&!D.live.paused)playAmbientEl()});
+$('pickBook').onclick=()=>openChoose();
+function openChoose(){
+  const list=D.books.filter(b=>!b.done),row=(b)=>h('button',{class:'bookpick',style:{color:'var(--ink)',borderColor:'#D5C6AE',background:'#fff'},onclick:()=>{D.prefs.bookId=b?b.id:'';save();closeS('chooseS');renderPrep()}},
+    b&&coverUrl.get(b.id)?h('span',{class:'thumb',style:{'--c':b.color}},h('img',{src:coverUrl.get(b.id),alt:''})):h('span',{class:'sp',style:{'--c':b?b.color:'#D5C6AE'}}),h('span',null,h('b',{text:b?b.title:'本を選ばずに読む'}),h('small',{style:{color:'var(--soft)'},text:b?(b.pages?`${b.current||0} / ${b.pages}ページ`:(b.author||'')):'雑誌や漫画、なんでも'})));
+  $('chList').replaceChildren(row(null),...list.map(row));openS('chooseS');
+}
+$('chNew').onclick=()=>{closeS('chooseS');openBook(null,true)};
+
+/* =========================================================
+   読書中（時刻で数えるので、画面を閉じてもずれない）
+   ========================================================= */
+let wake=null;
+async function keepAwake(){try{if('wakeLock' in navigator&&D.live&&!D.live.paused&&document.visibilityState==='visible')wake=await navigator.wakeLock.request('screen')}catch(e){}}
+function elapsedMs(){const L=D.live;if(!L)return 0;return L.acc+(L.paused?0:Date.now()-L.since)}
+$('startBtn').onclick=()=>{
+  audioInit();shuffleTheir();const b=book(D.prefs.bookId);
+  D.live={start:Date.now(),since:Date.now(),acc:0,paused:false,mins:D.prefs.mins,bookId:b?b.id:'',fromPage:b?(b.current||0):0,rang:false};save();
+  playAmbientEl();prepareBell();showLive();keepAwake();mediaSession();toast('しずかに、読みはじめましょう');
+};
+$('pauseBtn').onclick=()=>{const L=D.live;if(!L)return;audioInit();
+  if(L.paused){L.since=Date.now();L.paused=false;playAmbientEl();keepAwake();preparePip()}else{L.acc+=Date.now()-L.since;L.paused=true;stopAmbientEl();try{wake&&wake.release()}catch(e){}}
+  save();mediaSession();tickLive()};
+$('endBtn').onclick=()=>finish(false);
+function showLive(){$('prep').classList.add('hidden');$('live').classList.remove('hidden');$('room').classList.add('reading');
+  $('pipBtn').classList.toggle('hidden',!pipSupported());$('pipWrap').classList.toggle('hidden',!pipSupported());preparePip();$('bgNote').textContent=D.prefs.sound==='none'?'画面を閉じても、時間はちゃんと数えています。':'画面を閉じても、部屋の音は流れつづけます。';
+  $('reads2').textContent=readsText();paintCup();tickLive()}
+function hideLive(){$('prep').classList.remove('hidden');$('live').classList.add('hidden');$('room').classList.remove('reading')}
+function tickLive(){
+  const L=D.live;if(!L)return;const ms=elapsedMs(),s=Math.floor(ms/1000);
+  if(L.mins){const left=Math.max(0,L.mins*60-s);$('tBig').textContent=pad(Math.floor(left/60))+':'+pad(left%60);$('tRing').style.width=Math.min(100,s/(L.mins*60)*100)+'%';
+    $('tSub').textContent=L.paused?'ひと休み中':'あと少し、ゆっくりどうぞ';
+    if(left===0&&!L.rang){L.rang=true;save();try{$('bellEl').currentTime=0;$('bellEl').play()}catch(e){bell()}finish(true);return}}
+  else{$('tBig').textContent=pad(Math.floor(s/60))+':'+pad(s%60);$('tRing').style.width='0';$('tSub').textContent=L.paused?'ひと休み中':'好きなだけ、どうぞ'}
+  $('pauseBtn').textContent=L.paused?'つづきを読む':'ひと休み';
+  const b=book(L.bookId);$('caption').textContent=L.paused?'みんな、お茶を飲んでひと休みしています。':`${b?'『'+b.title+'』を':''}読んでいます。`;
+}
+setInterval(()=>{if(D.live)tickLive()},1000);
+setInterval(paintCup,30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){paintCup();if(D.live){tickLive();keepAwake();try{AC&&AC.state==='suspended'&&AC.resume()}catch(e){}}}});
+
+const SAY_END=[['fuku','よい読書でした。'],['kuma','いい時間だったね〜'],['maru','おつかれさまでした！'],['fuku','ページの向こうに、少し遠くまで行けましたね。'],['kuma','ねむくなったら、ねてもいいんだよ〜'],['maru','お茶、いれなおしましょうか？']];
+function faceSVG(who){
+  if(who==='kuma')return `<svg viewBox="0 0 60 60"><circle cx="12" cy="12" r="8" fill="#A8803F" stroke="#3A2E2A" stroke-width="2.5"/><circle cx="48" cy="12" r="8" fill="#A8803F" stroke="#3A2E2A" stroke-width="2.5"/><ellipse cx="30" cy="32" rx="25" ry="23" fill="#A8803F" stroke="#3A2E2A" stroke-width="3"/><path d="M13 29 Q18 33 23 30 M37 30 Q42 33 47 29" fill="none" stroke="#2A2220" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="30" cy="41" rx="12" ry="9" fill="#D9CFB7" stroke="#3A2E2A" stroke-width="2"/><ellipse cx="30" cy="37" rx="5" ry="4" fill="#1E1A18"/></svg>`;
+  if(who==='fuku')return `<svg viewBox="0 0 60 60"><ellipse cx="30" cy="32" rx="25" ry="25" fill="#9A7A5A" stroke="#3A2E2A" stroke-width="3"/><circle cx="21" cy="28" r="8" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/><circle cx="39" cy="28" r="8" fill="#F4EADB" stroke="#3A2E2A" stroke-width="2"/><circle cx="22" cy="29" r="3" fill="#2A2220"/><circle cx="40" cy="29" r="3" fill="#2A2220"/><circle cx="21" cy="28" r="10" fill="none" stroke="#C9A24A" stroke-width="1.8"/><circle cx="39" cy="28" r="10" fill="none" stroke="#C9A24A" stroke-width="1.8"/><path d="M27 36 L30 41 L33 36Z" fill="#E8B96A" stroke="#3A2E2A" stroke-width="1.5"/></svg>`;
+  return `<svg viewBox="0 0 60 60"><circle cx="30" cy="31" r="26" fill="#FFD9B8" stroke="#3A2E2A" stroke-width="3"/><path d="M12 17 Q30 -1 48 17 Q40 13 30 14 Q20 13 12 17Z" fill="#3A2E2A"/><circle cx="21" cy="30" r="3" fill="#3A2E2A"/><circle cx="39" cy="30" r="3" fill="#3A2E2A"/><path d="M23 39 Q30 45 37 39" fill="none" stroke="#3A2E2A" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+}
+const WHO={maru:'まるちゃん',fuku:'ふくろうの館長'};
+let endMin=0;
+function finish(auto){
+  const L=D.live;if(!L)return;stopAmbient();stopAmbientEl();try{wake&&wake.release()}catch(e){}
+  try{if(document.pictureInPictureElement)document.exitPictureInPicture();else if($('pipVideo').webkitPresentationMode==='picture-in-picture')$('pipVideo').webkitSetPresentationMode('inline')}catch(e){}
+  if('mediaSession' in navigator)try{navigator.mediaSession.playbackState='none'}catch(e){}
+  try{$('pipVideo').pause()}catch(e){}
+  endMin=Math.max(0,Math.round(elapsedMs()/60000));
+  if(endMin<1&&!auto){if(!confirm('まだ1分たっていません。記録せずに席を立ちますか？'))return;D.live=null;save();hideLive();renderPrep();return}
+  const b=book(L.bookId);
+  $('enTitle').textContent=auto?'時間になりました':'おつかれさまでした';
+  $('enSub').textContent=`${endMin}分、読みました。`+(b?`『${b.title}』`:'');
+  const [who,line]=pick(SAY_END);$('enSay').innerHTML=faceSVG(who);$('enSay').append(h('div',null,h('small',{text:who==='kuma'?bearName():WHO[who]}),line));
+  $('enPageWrap').classList.toggle('hidden',!b);if(b)$('enPage').value=b.current||'';$('enMemo').value='';openS('endS');
+}
+function record(withMemo){
+  const L=D.live;if(!L)return;const b=book(L.bookId);
+  const ses={id:uid(),bookId:b?b.id:'',title:b?b.title:'',start:L.start,minutes:endMin,fromPage:L.fromPage,toPage:b?num($('enPage').value,20000):0,memo:withMemo?str($('enMemo').value,400):''};
+  let doneNow=false;
+  if(b&&ses.toPage){b.current=ses.toPage;if(b.pages&&b.current>=b.pages&&!b.done){b.done=true;b.doneAt=Date.now();doneNow=true}}
+  D.sessions.unshift(ses);D.live=null;save();closeS('endS');hideLive();renderPrep();
+  if(doneNow)celebrate(b);
+  toast(doneNow?'通帳に記帳できます':withMemo&&ses.memo?'しおりをはさみました。通帳に記帳できます':'記録しました。通帳に記帳できます');
+}
+$('enSave').onclick=()=>record(true);
+$('enSkip').onclick=()=>record(false);
+
+/* =========================================================
+   本棚と図書カード
+   ========================================================= */
+const callNo=b=>[b.genre||'000',(b.author||b.title||'？').trim().charAt(0)||'？',b.vol||'1'];
+function renderShelf(){
+  const reading=D.books.filter(b=>!b.done),done=D.books.filter(b=>b.done).sort((a,b)=>(a.doneAt||0)-(b.doneAt||0));
+  const spine=b=>{const c=callNo(b);return h('button',{class:'spine',style:{'--c':b.color,height:(136+((b.pages||200)%36))+'px'},'aria-label':b.title,onclick:()=>openBook(b.id)},
+    h('span',{class:'tt',text:b.title}),h('span',{class:'lab'},h('span',{text:c[0]}),h('span',{text:c[1]}),h('span',{text:c[2]})))};
+  const face=b=>{const cv=coverEl(b);if(b.pages){cv.append(h('span',{class:'band'}),h('span',{class:'bar',style:{width:Math.min(100,(b.current||0)/b.pages*100)+'%'}}))}
+    return h('button',{class:'fo','aria-label':b.title,onclick:()=>openBook(b.id)},cv,h('span',{class:'nm',text:b.title}),h('span',{class:'pg',text:b.pages?`${b.current||0} / ${b.pages}`:' '}))};
+  $('shelves').replaceChildren(
+    h('div',{class:'shelf'},h('h3',{text:'読んでいる本'}),h('div',{class:'facing'},...reading.map(face),
+      h('button',{class:'fo add',onclick:()=>openBook(null,true),'aria-label':'本を本棚に入れる'},h('div',{class:'cover'},'＋ 本を入れる'),h('span',{class:'nm',text:' '})))),
+    h('div',{class:'shelf'},h('h3',{text:`読み終えた本（${done.length}冊）`}),h('div',{class:'books'},...done.map(spine),!done.length?h('span',{class:'emptyshelf',text:'読み終えた本は、背表紙を見せてここに並びます'}):null)));
+}
+let editId=null,bColor=SPINE[0];
+function openBook(id,isNew){
+  editId=id;const b=id?book(id):null;bColor=b?b.color:SPINE[D.books.length%SPINE.length];
+  $('bkTitle').textContent=b?'図書カード':'本棚に入れる';
+  $('bTitle').value=b?b.title:'';$('bAuthor').value=b?b.author||'':'';$('bPages').value=b&&b.pages?b.pages:'';$('bCur').value=b&&b.current?b.current:'';
+  $('bGenre').replaceChildren(...GENRES.map(([n,l])=>h('option',{value:n,text:`${n}　${l}`})));$('bGenre').value=b&&b.genre?b.genre:'913';
+  $('bSave').textContent=b?'保存する':'本棚に入れる';$('bDel').classList.toggle('hidden',!b);$('bDone').classList.toggle('hidden',!b||b.done);
+  pendingCover=null;renderColors();renderCoverBox();
+  const card=$('bCard'),info=$('bInfo');card.replaceChildren();info.replaceChildren();
+  if(b){const ss=D.sessions.filter(s=>s.bookId===b.id),mins=ss.reduce((a,s)=>a+s.minutes,0),c=callNo(b);
+    const days=[...new Set(ss.map(s=>ymd(new Date(s.start))))].sort();
+    card.append(h('div',{class:'card'},
+      coverUrl.get(b.id)?h('div',{class:'cvr'},coverEl(b,true)):null,
+      h('div',{class:'head'},h('b',{text:'図書カード'}),h('div',{class:'callno'},h('span',{text:c[0]}),h('span',{text:c[1]}),h('span',{text:c[2]}))),
+      h('div',{class:'kv'},h('span',{text:'書　名'}),h('span',{text:b.title}),h('span',{text:'著　者'}),h('span',{text:b.author||'—'}),
+        h('span',{text:'分　類'}),h('span',{text:(GENRES.find(g=>g[0]===(b.genre||'000'))||['','その他'])[1]}),h('span',{text:'読んだ'}),h('span',{text:`${ss.length}回・${mins}分`+(b.pages?`（${b.current||0} / ${b.pages}ページ）`:'')})),
+      h('div',{class:'stamps'},...Array.from({length:Math.max(10,Math.ceil(days.length/5)*5)},(_,i)=>{const d=days[i];return h('div',null,d?h('div',{class:'s'},`${+d.slice(5,7)}.${+d.slice(8)}`,h('br'),'読'):null)})),
+      h('div',{class:'exlibris',text:'EX LIBRIS　まるい読書室'})));
+    if(b.pages)info.append(h('div',{class:'prog'},h('i',{style:{width:Math.min(100,(b.current||0)/b.pages*100)+'%'}})));
+    /* このペースだと、あと何分くらい */
+    const pp=ss.filter(x=>x.toPage>x.fromPage),pgs=pp.reduce((a,x)=>a+(x.toPage-x.fromPage),0),pm=pp.reduce((a,x)=>a+x.minutes,0);
+    if(b.pages&&!b.done&&pgs>=5&&pm>0){const left=Math.max(0,b.pages-(b.current||0)),need=Math.round(left/(pgs/pm));
+      info.append(h('div',{class:'pace',text:`いつものペース（1分で${(pgs/pm).toFixed(1)}ページ）なら、あと${need>=60?Math.floor(need/60)+'時間'+(need%60?need%60+'分':''):need+'分'}くらいで読み終わりそうです。`}))}
+    const memos=ss.filter(s=>s.memo).slice(0,10);
+    if(memos.length)info.append(h('div',{class:'slog'},...memos.map(s=>h('div',{class:'it'},h('div',{class:'sub',text:new Date(s.start).toLocaleDateString('ja-JP')+(s.toPage?`　${s.toPage}ページ`:'')}),h('div',{class:'memo',text:s.memo})))))}
+  openS('bookS');if(isNew)setTimeout(()=>$('bTitle').focus(),80);
+}
+let pendingCover=null;
+function renderCoverBox(){
+  const b=editId?book(editId):null,box=$('bCover'),u=pendingCover?pendingCover.url:(b&&coverUrl.get(b.id));box.replaceChildren();
+  const tmp={id:'_',title:$('bTitle').value||'題名',author:$('bAuthor').value,color:pendingCover?pendingCover.color:bColor};
+  const cv=h('div',{class:'cover',style:{'--c':tmp.color}});if(u)cv.append(h('img',{src:u,alt:'表紙'}));else cv.append(h('div',{class:'gen'},h('b',{text:tmp.title})));
+  const inp=h('input',{type:'file',accept:'image/*','aria-label':'表紙の写真'});
+  inp.addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+    try{const r=await shrinkCover(f);if(pendingCover)URL.revokeObjectURL(pendingCover.url);pendingCover={blob:r.blob,color:r.color,url:URL.createObjectURL(r.blob)};bColor=r.color;renderColors();renderCoverBox();toast('表紙の色を、背表紙にも使います')}
+    catch(err){toast(err.message||'写真を読めませんでした')}});
+  box.append(cv,h('div',{class:'cbtns'},h('span',{class:'btn filebtn'},u?'写真を変える':'📷 表紙の写真を入れる',inp),
+    u?h('button',{class:'btn',text:'写真を外す',onclick:()=>{if(pendingCover){URL.revokeObjectURL(pendingCover.url);pendingCover=null}else if(b){pendingCover={remove:true}}renderCoverBox()}}):null,
+    h('span',{class:'sub',text:'撮った場所などの情報は消して、このiPhoneの中だけに保存します'})));
+  if(pendingCover&&pendingCover.remove){cv.replaceChildren(h('div',{class:'gen'},h('b',{text:tmp.title})))}
+}
+['bTitle','bAuthor'].forEach(id=>$(id).addEventListener('input',()=>{if(!(editId&&coverUrl.get(editId))&&!(pendingCover&&pendingCover.url))renderCoverBox()}));
+function renderColors(){$('bColors').replaceChildren(...SPINE.map(c=>h('button',{class:'cdot',style:{'--c':c},'aria-label':'この色','aria-pressed':String(c===bColor),onclick:()=>{bColor=c;renderColors()}})))}
+$('bSave').onclick=()=>{
+  const title=str($('bTitle').value,60);if(!title){toast('題名を入れてください');$('bTitle').focus();return}
+  const g=$('bGenre').value,v={title,author:str($('bAuthor').value,40),pages:num($('bPages').value,20000),current:num($('bCur').value,20000),color:bColor,genre:GENRES.some(x=>x[0]===g)?g:'000'};
+  let b;if(editId){b=book(editId);Object.assign(b,v)}else{b={id:uid(),createdAt:Date.now(),done:false,...v};D.books.push(b);if(!D.prefs.bookId)D.prefs.bookId=b.id}
+  const pc=pendingCover;pendingCover=null;
+  if(pc&&pc.blob){CV.put(b.id,pc.blob).then(()=>{b.hasCover=true;setCoverUrl(b.id,pc.blob);URL.revokeObjectURL(pc.url);save();renderShelf();renderPrep()}).catch(()=>toast('表紙を保存できませんでした'))}
+  else if(pc&&pc.remove){CV.del(b.id).catch(()=>{});b.hasCover=false;setCoverUrl(b.id,null)}
+  save();closeS('bookS');renderShelf();renderPrep();toast(editId?'保存しました':'本棚に入れました');
+};
+$('bDone').onclick=()=>{const b=book(editId);if(!b)return;b.done=true;b.doneAt=Date.now();if(b.pages)b.current=b.pages;if(D.prefs.bookId===b.id)D.prefs.bookId='';save();closeS('bookS');renderShelf();renderPrep();celebrate(b)};
+const SAY_DONE=[['fuku','一冊を読み終えるのは、小さな旅を終えることです。おかえりなさい。'],['kuma','さいごまで、えらかったね〜'],['maru','読了、おめでとうございます！']];
+function celebrate(b){
+  const ss=D.sessions.filter(s=>s.bookId===b.id),mins=ss.reduce((a,s)=>a+s.minutes,0),days=new Set(ss.map(s=>ymd(new Date(s.start)))).size;
+  $('dnCover').replaceChildren(coverEl(b));$('dnTitle').textContent=`『${b.title}』`;
+  $('dnSub').textContent=days?`${days}日・${mins>=60?Math.floor(mins/60)+'時間'+(mins%60?mins%60+'分':''):mins+'分'}で読み終えました`:'読み終えました';
+  const [who,line]=pick(SAY_DONE);$('dnSay').innerHTML=faceSVG(who);$('dnSay').append(h('div',null,h('small',{text:who==='kuma'?bearName():WHO[who]}),line));
+  $('doneOv').classList.remove('hidden');audioInit();if(AC){[523.25,659.25,783.99].forEach((f,i)=>setTimeout(()=>blip(f,1.2,.06),i*160))}
+}
+$('dnOk').onclick=()=>{$('doneOv').classList.add('hidden');go('vShelf')};
+$('bDel').onclick=()=>{const b=book(editId);if(!b||!confirm(`『${b.title}』を本棚から出しますか？\n（通帳の記録とメモは残ります）`))return;
+  D.books=D.books.filter(x=>x!==b);if(D.prefs.bookId===b.id)D.prefs.bookId='';CV.del(b.id).catch(()=>{});setCoverUrl(b.id,null);save();closeS('bookS');renderShelf();renderPrep()};
+
+/* =========================================================
+   読書通帳（記帳すると、新しい行が印字される）
+   ========================================================= */
+const PB_ROWS=12;
+function renderLog(animateFrom){
+  const today=ymd(new Date()),byDay={};D.sessions.forEach(s=>{const k=ymd(new Date(s.start));byDay[k]=(byDay[k]||0)+s.minutes});
+  const total=D.sessions.reduce((a,s)=>a+s.minutes,0);let streak=0;const d=new Date();if(!byDay[ymd(d)])d.setDate(d.getDate()-1);while(byDay[ymd(d)]){streak++;d.setDate(d.getDate()-1)}
+  const fmtM=m=>m>=60?`${Math.floor(m/60)}時間${m%60?m%60+'分':''}`:`${m}分`;
+  $('stats').replaceChildren(h('div',null,h('b',{text:fmtM(byDay[today]||0)}),h('span',{text:'きょう'})),h('div',null,h('b',{text:streak+'日'}),h('span',{text:'つづけて読んだ'})),h('div',null,h('b',{text:fmtM(total)}),h('span',{text:'これまで'})));
+  const days=[...Array(7)].map((_,i)=>{const x=new Date();x.setDate(x.getDate()-6+i);return x});const max=Math.max(30,...days.map(x=>byDay[ymd(x)]||0));
+  $('week').replaceChildren(...days.map(x=>{const m=byDay[ymd(x)]||0;return h('div',{class:'d'+(ymd(x)===today?' today':'')},h('span',{class:'m',text:m?m+'分':''}),h('div',{class:'bar',style:{height:(m/max*100)+'%'}}),W[x.getDay()])}));
+  /* 通帳：古い順に、記帳ずみの行だけ印字 */
+  const asc=[...D.sessions].sort((a,b)=>a.start-b.start),printed=asc.slice(0,Math.min(D.kicho||0,asc.length)),waiting=asc.length-printed.length;
+  const pb=$('passbook');pb.replaceChildren();
+  pb.append(h('div',{class:'pbhead'},h('b',{text:'読書通帳'}),h('small',{text:`No.${String(asc.length).padStart(4,'0')}　まるい読書室`})),
+    h('div',{class:'pbcols'},h('span',{text:'年月日'}),h('span',{text:'摘要'}),h('span',{text:'分'}),h('span',{text:'頁'}),h('span',{text:'累計(分)'})));
+  let acc=0;const rows=[];
+  printed.forEach((s,i)=>{acc+=s.minutes;const dt=new Date(s.start);
+    if(i>0&&i%PB_ROWS===0)rows.push(h('div',{class:'pbpage',text:`― ${i/PB_ROWS+1} ページ ―`}));
+    rows.push(h('div',{class:'pbrow'+(animateFrom!=null&&i>=animateFrom?' new':''),style:animateFrom!=null&&i>=animateFrom?{animationDelay:((i-animateFrom)*.35)+'s'}:{}},
+      h('span',{text:`${String(dt.getFullYear()).slice(2)}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`}),h('span',{class:'ttl',text:s.title||'（本を選ばずに）'}),
+      h('span',{text:String(s.minutes)}),h('span',{text:s.toPage?String(Math.max(0,s.toPage-(s.fromPage||0))):'—'}),h('span',{text:acc.toLocaleString()})))});
+  const blanks=Math.max(3,PB_ROWS-(printed.length%PB_ROWS||PB_ROWS));for(let i=0;i<(printed.length?blanks:6);i++)rows.push(h('div',{class:'pbrow'},h('span'),h('span'),h('span'),h('span'),h('span')));
+  pb.append(...rows,h('div',{class:'kicho'},h('button',{text:'記 帳',disabled:waiting?null:true,onclick:kicho}),h('small',{text:waiting?`未記帳 ${waiting}件`:'すべて記帳ずみ'})));
+  const M=$('memos');M.replaceChildren();const ms=D.sessions.filter(s=>s.memo).slice(0,30);
+  if(!ms.length)M.append(h('div',{class:'none',text:'しおりのメモは、まだありません。'}));
+  ms.forEach(s=>{const dt=new Date(s.start);M.append(h('div',{class:'it'},h('div',{class:'t',text:`${dt.getMonth()+1}月${dt.getDate()}日（${W[dt.getDay()]}）`+(s.toPage?`　${s.toPage}ページ`:'')}),h('b',{text:s.title?`『${s.title}』`:'本を選ばずに'}),h('div',{class:'memo',text:s.memo})))});
+}
+function kicho(){const from=D.kicho||0,n=D.sessions.length;if(from>=n)return;D.kicho=n;save();audioInit();
+  for(let i=0;i<(n-from)*6;i++)setTimeout(()=>{if(AC)blip(900+Math.random()*200,.02,.04,'square')},i*55);
+  renderLog(from);toast(`${n-from}件を記帳しました`)}
+
+/* =========================================================
+   設定・バックアップ
+   ========================================================= */
+$('setBtn').onclick=()=>{$('sBear').value=D.prefs.bear||'';$('sBear').placeholder=bearName();$('sBed').value=D.prefs.bed||'23:00';openS('setS')};
+$('sBear').addEventListener('input',e=>{D.prefs.bear=str(e.target.value,12);save();renderPrep()});
+$('sBed').addEventListener('input',e=>{if(/^\d{2}:\d{2}$/.test(e.target.value)){D.prefs.bed=e.target.value;save()}});
+$('expBtn').onclick=async()=>{toast('バックアップを作っています…');const covers={};
+  for(const b of D.books){if(!b.hasCover)continue;try{const bl=await CV.get(b.id);if(bl)covers[b.id]=await new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(bl)})}catch(e){}}
+  const json=JSON.stringify({app:'marui-dokushoshitsu',version:3,books:D.books,sessions:D.sessions,drinks:D.drinks,kicho:D.kicho,covers});
+  const u=URL.createObjectURL(new Blob([json],{type:'application/json'})),a=h('a',{href:u,download:'dokusho-'+ymd(new Date()).replace(/-/g,'')+'.json'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);toast('バックアップを保存しました')};
+$('impIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>20*1024*1024){toast('ファイルが大きすぎます');return}
+  try{const d=JSON.parse(await f.text());if(!d||d.app!=='marui-dokushoshitsu'||!Array.isArray(d.books)||!Array.isArray(d.sessions))throw 0;
+    const bids=new Set(D.books.map(b=>b.id)),sids=new Set(D.sessions.map(s=>s.id)),dids=new Set(D.drinks.map(x=>x.id));let nb=0,ns=0;const okId=v=>typeof v==='string'&&/^[\w-]{1,40}$/.test(v);
+    d.books.forEach(b=>{if(!b||!okId(b.id)||bids.has(b.id))return;const t=str(b.title,60);if(!t)return;
+      D.books.push({hasCover:false,id:b.id,title:t,author:str(b.author,40),pages:num(b.pages,20000),current:num(b.current,20000),color:SPINE.includes(b.color)?b.color:SPINE[0],genre:GENRES.some(g=>g[0]===b.genre)?b.genre:'000',done:!!b.done,doneAt:num(b.doneAt,1e13),createdAt:num(b.createdAt,1e13)});nb++});
+    d.sessions.forEach(s=>{if(!s||!okId(s.id)||sids.has(s.id))return;D.sessions.push({id:s.id,bookId:okId(s.bookId)?s.bookId:'',title:str(s.title,60),start:num(s.start,1e13),minutes:num(s.minutes,1440),fromPage:num(s.fromPage,20000),toPage:num(s.toPage,20000),memo:str(s.memo,400)});ns++});
+    (Array.isArray(d.drinks)?d.drinks:[]).forEach(x=>{if(!x||!okId(x.id)||dids.has(x.id)||!drink(x.k))return;D.drinks.push({id:x.id,k:x.k,mg:drink(x.k).mg,at:num(x.at,1e13)})});
+    /* 表紙：画像のdata URLだけを受け付けて、描き直してから保存する */
+    if(d.covers&&typeof d.covers==='object')for(const [id,du] of Object.entries(d.covers)){const b=book(id);if(!b||typeof du!=='string')continue;
+      const m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(du);if(!m||m[2].length>8e6)continue;
+      try{const bin=atob(m[2]),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);const r=await shrinkCover(new File([arr],'c.jpg',{type:m[1]}));await CV.put(b.id,r.blob);b.hasCover=true;setCoverUrl(b.id,r.blob)}catch(e){}}
+    D.sessions.sort((a,b)=>b.start-a.start);D.drinks.sort((a,b)=>a.at-b.at);save();renderShelf();renderLog();renderPrep();renderSlip();toast(`本${nb}冊・記録${ns}件を戻しました`)}
+  catch(err){toast('このアプリのバックアップではないようです')}});
+
+/* =========================================================
+   画面・シート
+   ========================================================= */
+function go(v){['vRoom','vCafe','vShelf','vLog'].forEach(id=>$(id).classList.toggle('hidden',id!==v));
+  document.querySelectorAll('.nav button').forEach(b=>{if(b.dataset.v===v)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  if(v==='vCafe'){renderMenu();renderSlip()}if(v==='vShelf')renderShelf();if(v==='vLog')renderLog();if(v==='vRoom')paintCup();window.scrollTo({top:0})}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+function openS(id){$(id).classList.remove('hidden')}
+function closeS(id){$(id).classList.add('hidden')}
+document.querySelectorAll('.scrim').forEach(s=>s.addEventListener('click',e=>{if(s.id==='endS')return;if(e.target===s||e.target.closest('[data-close]'))closeS(s.id)}));
+document.addEventListener('pointerdown',()=>{if(AC&&AC.state==='suspended')AC.resume()});
+
+/* =========================================================
+   起動
+   ========================================================= */
+shuffleTheir();paintRoom();renderPrep();scheduleFlip();
+loadCovers().then(()=>{renderPrep();if(!$('vShelf').classList.contains('hidden'))renderShelf()});
+if(D.live){showLive();toast('読書のつづきです。音は、画面を押すと戻ります');
+  document.addEventListener('pointerdown',function once(){audioInit();if(D.live&&!D.live.paused){playAmbientEl();mediaSession();preparePip()}document.removeEventListener('pointerdown',once)})}
+</script>
+</body>
+</html>
