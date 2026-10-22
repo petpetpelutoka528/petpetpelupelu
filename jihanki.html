@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>よるの自販機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#c9d2ea; --asphalt:#7f8597; --curb:#a9aebd; --ink:#1d2033; --ink2:#55597a;
+  --body:#f3f5fb; --bodyEdge:#b9c1d8; --side:#c7cee2; --brand:#2347c5; --brandGlow:#7ea2ff;
+  --case:#eaf1ff; --shelf:#9aa6c4; --led:#ff3b30; --ledOff:#3a1512; --ledBg:#140d0c; --lamp:#2bd46b;
+  --cold:#1e6bff; --hot:#e3262f; --gold:#ffc83d; --card:#ffffff; --line:#d5dae8;
+  --shade:rgba(20,22,40,.45); --glow:0 0 0 rgba(0,0,0,0); color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --sky:#11132e; --asphalt:#24273d; --curb:#3a3e58; --ink:#eef0ff; --ink2:#a9adcf;
+  --card:#22254a; --line:#3a3e6b; --shade:rgba(0,0,0,.6); --glow:0 0 60px 6px rgba(150,190,255,.32); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --sky:#11132e; --asphalt:#24273d; --curb:#3a3e58; --ink:#eef0ff; --ink2:#a9adcf;
+  --card:#22254a; --line:#3a3e6b; --shade:rgba(0,0,0,.6); --glow:0 0 60px 6px rgba(150,190,255,.32); color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--sky);color:var(--ink);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic",sans-serif;font-weight:500;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--sky)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.dot{font-family:"DotGothic16","Osaka-Mono",monospace;font-weight:400}
+.wrap{max-width:460px;margin:0 auto;padding:10px 10px 30px}
+
+/* 上の段 */
+.top{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.purse{display:flex;align-items:baseline;gap:4px;background:var(--card);border:2px solid var(--line);border-radius:14px;padding:6px 8px;flex:1;min-width:0;overflow:hidden}
+.purse small{font-size:12px;color:var(--ink2);white-space:nowrap}
+.purse b{font-family:"DotGothic16",monospace;font-size:18px;font-weight:400;white-space:nowrap}
+.tbtn{height:40px;padding:0 8px;border-radius:12px;background:var(--card);border:2px solid var(--line);font-size:13px;font-weight:800;white-space:nowrap}
+.tbtn.go{background:var(--gold);border-color:#d9a21f;color:#3b2a10}
+
+/* ===== 自販機 ===== */
+.vm{position:relative;filter:drop-shadow(0 14px 18px rgba(0,0,0,.25))}
+.vm.shake{animation:vshake .35s}
+@keyframes vshake{20%{transform:translate(-3px,1px) rotate(-.4deg)}40%{transform:translate(3px,0) rotate(.4deg)}60%{transform:translate(-2px,1px)}80%{transform:translate(2px,0)}}
+.cab{position:relative;background:var(--body);border:3px solid var(--bodyEdge);border-radius:20px 20px 8px 8px;padding:0 10px 10px;box-shadow:var(--glow),inset -10px 0 0 var(--side)}
+.sign{margin:0 -10px;border-radius:16px 16px 0 0;background:var(--brand);color:#fff;padding:10px 14px 8px;position:relative;overflow:hidden;text-align:center}
+.sign h1{font-size:22px;font-weight:800;letter-spacing:.12em;text-shadow:0 0 10px var(--brandGlow)}
+.sign small{display:block;font-size:11px;opacity:.85;margin-top:2px}
+.sign::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 45%,transparent 60%);pointer-events:none}
+.moth{position:absolute;width:5px;height:4px;border-radius:50%;background:#e9e3c8;opacity:0;top:20px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .moth{opacity:.85}}
+:root[data-theme="dark"] .moth{opacity:.85}
+.moth.m1{animation:fly1 6s linear infinite}.moth.m2{animation:fly2 8s linear infinite}
+@keyframes fly1{0%{left:10%;top:8px}25%{left:40%;top:30px}50%{left:80%;top:12px}75%{left:50%;top:36px}100%{left:10%;top:8px}}
+@keyframes fly2{0%{left:85%;top:28px}30%{left:55%;top:6px}60%{left:20%;top:32px}100%{left:85%;top:28px}}
+
+.ticker{margin:8px 0;height:30px;background:var(--ledBg);border-radius:6px;overflow:hidden;position:relative;border:2px solid #000;
+  background-image:radial-gradient(rgba(255,120,40,.12) 1px,transparent 1.2px);background-size:4px 4px}
+.ticker span{position:absolute;top:2px;white-space:nowrap;font-size:19px;color:#ff8a1e;text-shadow:0 0 6px rgba(255,120,30,.8);left:100%;animation:tick 12s linear infinite}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(calc(-100% - 460px))}}
+
+.case{position:relative;background:var(--case);border:3px solid #8e98b6;border-radius:10px;padding:12px 4px 4px;overflow:hidden}
+.case .lightbar{position:absolute;top:0;left:6px;right:6px;height:5px;border-radius:0 0 4px 4px;background:#fff;box-shadow:0 0 14px 4px rgba(255,255,255,.95)}
+.case.flicker .lightbar{animation:flick .7s steps(2) 1}
+.case.flicker{animation:dim .7s steps(2) 1}
+@keyframes flick{0%,40%{opacity:.15}20%,60%,100%{opacity:1}}
+@keyframes dim{0%,40%{filter:brightness(.8)}20%,60%,100%{filter:none}}
+.glass{position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(118deg,transparent 18%,rgba(255,255,255,.38) 24%,transparent 30%,transparent 62%,rgba(255,255,255,.22) 66%,transparent 70%);z-index:3}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;position:relative;padding-bottom:4px;margin-bottom:6px}
+.slot{display:flex;flex-direction:column;align-items:center;position:relative}
+.slot .art{height:103px;width:100%;display:flex;align-items:flex-end;justify-content:center;position:relative;z-index:1;border-bottom:5px solid var(--shelf)}
+.slot .art svg{width:42px;height:98px;display:block}
+.slot.rare .art::before{content:"";position:absolute;inset:-6px -10px;border-radius:50%;background:radial-gradient(rgba(255,210,70,.8),transparent 70%);animation:shine 1.4s ease-in-out infinite;z-index:-1}
+@keyframes shine{50%{opacity:.25;transform:scale(.85)}}
+.slot .steam{position:absolute;top:-6px;left:50%;width:30px;margin-left:-15px;height:18px;z-index:2}
+.slot .steam path{animation:steam 2s ease-in-out infinite}
+@keyframes steam{50%{transform:translateY(-3px);opacity:.3}}
+.slot .drip{position:absolute;top:40px;right:10px;width:4px;height:6px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:rgba(120,180,255,.8);z-index:2;animation:drip 3s ease-in infinite}
+@keyframes drip{0%,70%{transform:translateY(0);opacity:0}75%{opacity:1}100%{transform:translateY(40px);opacity:0}}
+.plate{margin-top:5px;width:94%;background:#fff;border:1px solid #c8cee0;border-radius:4px;text-align:center;line-height:1.1;padding:2px 1px}
+.plate .nm{display:block;font-size:9.5px;color:#30344f;height:21px;overflow:hidden}
+.plate .tag{display:inline-block;font-size:8.5px;font-weight:800;color:#fff;border-radius:3px;padding:0 3px;margin:1px 0}
+.plate .tag.c{background:var(--cold)}.plate .tag.h{background:var(--hot)}
+.plate .pr{display:block;font-family:"DotGothic16",monospace;font-size:14px;color:#111}
+.pbtn{margin-top:4px;width:80%;height:22px;border-radius:5px;background:linear-gradient(#fff,#dfe3ee);border:2px solid #9aa3bd;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #7d86a2}
+.pbtn i{width:24px;height:6px;border-radius:3px;background:#c8ccd6}
+.pbtn.ok i{background:var(--lamp);box-shadow:0 0 6px var(--lamp)}
+.pbtn.out{font-size:10px;font-weight:800;color:var(--led)}
+.pbtn.out i{display:none}
+.pbtn:active{transform:translateY(2px);box-shadow:0 0 0 #7d86a2}
+
+/* 操作パネル */
+.panel{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-top:10px;background:#dfe4f0;border:2px solid #b3bbd2;border-radius:10px;padding:8px}
+.seg7{background:var(--ledBg);border-radius:6px;padding:5px 7px 3px;border:2px solid #000}
+.seg7 svg{display:block;height:30px}
+.seg7 small{display:block;font-size:9px;color:#ff9b94;text-align:center;margin-top:2px}
+.lamps{display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:800}
+.lamps span{border-radius:4px;padding:1px 4px;text-align:center;background:#c4c9d6;color:#7a8096}
+.lamps span.on.win{background:var(--gold);color:#3b2a10;box-shadow:0 0 8px var(--gold)}
+.lamps span.on.out{background:var(--led);color:#fff}
+.slots{display:flex;flex-direction:column;align-items:center;gap:6px}
+.coinslot{width:46px;height:30px;border-radius:6px;background:#9aa3bd;display:flex;align-items:center;justify-content:center}
+.coinslot::before{content:"";width:5px;height:20px;border-radius:3px;background:#1a1c26}
+.billslot{width:58px;height:16px;border-radius:4px;background:#9aa3bd;display:flex;align-items:center;justify-content:center}
+.billslot::before{content:"";width:46px;height:4px;border-radius:2px;background:#1a1c26}
+.lever{grid-column:3;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#b9c1d8);border:2px solid #8e98b6;font-size:9px;font-weight:800;color:#55597a;display:flex;align-items:center;justify-content:center;line-height:1.1;text-align:center}
+.lever.pull{animation:pull .5s}
+@keyframes pull{40%{transform:rotate(-70deg)}}
+.wallet{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px;align-items:center}
+.coin{width:100%;max-width:52px;justify-self:center;aspect-ratio:1;border-radius:50%;font-family:"DotGothic16",monospace;font-size:13px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(0,0,0,.2);color:#3b2a10;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
+.coin.c10{background:#d98a4b}.coin.c50,.coin.c100{background:#dde1ea;color:#333}.coin.c500{background:#e8c25a}
+.bill{height:34px;border-radius:5px;background:#cfe3c8;border:2px solid #8fb383;font-size:11px;font-weight:800;color:#2e4a26}
+.coin:disabled,.bill:disabled{opacity:.3}
+.coin:active,.bill:active{transform:scale(.92)}
+.fly{position:fixed;z-index:50;pointer-events:none}
+
+/* 取り出し口・返却口 */
+.lower{display:grid;grid-template-columns:1fr 70px;gap:8px;margin-top:10px}
+.tray{height:70px;border-radius:10px;background:#15161e;border:3px solid #8e98b6;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;gap:2px;padding-bottom:4px;width:100%}
+.tray .flap{position:absolute;inset:0;background:linear-gradient(rgba(180,190,215,.55),rgba(120,130,160,.65));border-bottom:4px solid rgba(255,255,255,.3);transform-origin:top;transition:transform .25s;display:flex;align-items:center;justify-content:center;font-size:11px;color:#eef;font-weight:800;letter-spacing:.2em}
+.tray.open .flap{transform:perspective(200px) rotateX(70deg)}
+.tray svg{width:24px;height:56px}
+.cup{height:70px;border-radius:10px 10px 22px 22px;background:#15161e;border:3px solid #8e98b6;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ffd36b;font-family:"DotGothic16",monospace;font-size:12px;width:100%}
+.cup small{font-family:"M PLUS Rounded 1c",sans-serif;font-size:9px;color:#8d93ad}
+.cup.has{animation:glim 1s ease-in-out infinite}
+@keyframes glim{50%{box-shadow:0 0 12px 2px rgba(255,211,107,.6)}}
+.staff{display:flex;gap:6px;margin-top:8px}
+.staff button{flex:1;height:34px;border-radius:8px;border:2px dashed #9aa3bd;font-size:12px;font-weight:800;color:#55597a}
+.sticker{position:absolute;right:-6px;top:120px;transform:rotate(8deg);background:#ffe14d;color:#a3241b;font-weight:800;font-size:11px;padding:4px 7px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.2);z-index:4}
+.under{display:flex;width:calc(100% - 24px);margin:0 12px;height:26px;background:#0d0e14;border-radius:0 0 10px 10px;align-items:center;justify-content:center;font-size:11px;color:#9aa0bf}
+.lane{position:relative;height:100px;margin-top:2px;overflow:hidden;border-radius:8px}
+.lane .road{position:absolute;left:0;right:0;bottom:0;height:46px;background:var(--asphalt);border-top:6px solid var(--curb)}
+.lane .road::after{content:"";position:absolute;left:0;right:0;top:20px;height:3px;background:repeating-linear-gradient(90deg,#e8e2c4 0 22px,transparent 22px 44px);opacity:.6}
+.truck{position:absolute;bottom:6px;left:100%;width:150px;height:66px;transition:left 1.6s cubic-bezier(.3,.1,.3,1)}
+.truck .bub{position:absolute;left:-6px;top:-30px;background:#fff;color:#1d2033;border-radius:10px;padding:3px 8px;font-size:11px;font-weight:800;white-space:nowrap;opacity:0;transition:opacity .2s;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.truck.talk .bub{opacity:1}
+.slot.fill{animation:fillin .5s}
+@keyframes fillin{0%{transform:scale(.6);opacity:.2}70%{transform:scale(1.08)}}
+
+/* 手持ち */
+.hand{margin-top:14px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 12px}
+.hand h2,.sec h2{font-size:14px;font-weight:800;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}
+.hand h2 small{font-size:12px;color:var(--ink2);font-weight:500}
+.hlist{display:flex;gap:6px;min-height:84px;align-items:flex-end;overflow-x:auto}
+.hitem{display:flex;flex-direction:column;align-items:center;gap:2px;flex:none;width:54px;position:relative}
+.hitem svg{width:34px;height:80px}
+.hitem span{font-size:10px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:center}
+.hitem b{position:absolute;top:0;right:2px;font-size:9px;background:var(--brand);color:#fff;border-radius:4px;padding:0 3px}
+.hempty{font-size:13px;color:var(--ink2);align-self:center}
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.stats span{font-size:12px;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--ink2)}
+
+/* 重ねる画面 */
+.ov{position:fixed;inset:0;z-index:30;background:var(--shade);display:flex;align-items:flex-end;justify-content:center}
+.ov[hidden]{display:none}
+.sheet{background:var(--card);color:var(--ink);width:100%;max-width:460px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));position:relative}
+.sheet h2{font-size:18px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sheet h2 button{margin-left:auto;font-size:14px;font-weight:800;color:var(--ink2);padding:6px 8px}
+.big{display:flex;justify-content:center;padding:6px 0;position:relative;height:292px}
+.big .bwrap{position:relative}
+.big svg{width:120px;height:280px;cursor:pointer;display:block}
+.big.wob .bwrap{animation:wob .25s}
+@keyframes wob{25%{transform:rotate(-14deg) translateX(-6px)}75%{transform:rotate(14deg) translateX(6px)}}
+.drop{position:absolute;border-radius:50%;pointer-events:none}
+.say{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:var(--ink);color:var(--card);font-weight:800;font-size:13px;padding:4px 10px;border-radius:10px;white-space:nowrap;opacity:0;transition:opacity .2s;z-index:2}
+.say.show{opacity:1}
+.meter[hidden]{display:none}
+.meter{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);margin:0 0 8px}
+.meter div{flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7bd3ff,#ff5e3a);transition:width .2s}
+.lv{text-align:center;font-family:"DotGothic16",monospace;font-size:14px;color:var(--ink2);margin-bottom:10px;min-height:20px}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.act{height:48px;border-radius:12px;border:2px solid var(--line);font-weight:800;font-size:15px}
+.act.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.act.warn{background:var(--hot);border-color:var(--hot);color:#fff}
+.act.wide{grid-column:span 2}
+.act:disabled{opacity:.4}
+.act[hidden]{display:none}
+.pick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.pick button{display:flex;flex-direction:column;align-items:center;width:62px;padding:4px;border:2px solid var(--line);border-radius:10px}
+.pick svg{width:30px;height:70px}
+.pick span{font-size:10px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note{font-size:13px;color:var(--ink2);margin:6px 0}
+.dex{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dcell{border:2px solid var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:4px 2px}
+.dcell svg{width:30px;height:70px}
+.dcell span{font-size:10px;text-align:center;line-height:1.2;height:24px;overflow:hidden}
+.dcell.r{border-color:var(--gold)}
+.sec{margin-top:14px}
+.mixrow{font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.mixrow i{width:16px;height:16px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.2)}
+.fact{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start}
+.fact .prev{display:flex;justify-content:center;background:var(--case);border-radius:12px;padding:6px}
+.fact .prev svg{width:90px;height:210px}
+.fld{margin-bottom:10px}
+.fld>label{display:block;font-size:12px;color:var(--ink2);margin-bottom:4px}
+.fld input[type=text],.fld input[type=number]{width:100%;height:40px;border-radius:10px;border:2px solid var(--line);background:transparent;color:var(--ink);padding:0 10px;font:inherit;font-size:16px;-webkit-user-select:text;user-select:text}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
+.chk input{width:22px;height:22px}
+.sw{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sw button{width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.15)}
+.sw button.on{outline:3px solid var(--ink);outline-offset:1px}
+.sw input[type=color]{width:34px;height:34px;border:0;background:none;padding:0}
+.shapes{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.shapes button{border:2px solid var(--line);border-radius:8px;padding:2px 0;display:flex;justify-content:center}
+.shapes button.on{border-color:var(--brand);background:var(--case)}
+.shapes svg{width:22px;height:52px}
+.file{display:flex;gap:6px}
+.file label.fb{flex:1;height:40px;border-radius:10px;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;cursor:pointer}
+.mbtn{height:40px;border-radius:10px;border:2px solid var(--line);font-size:13px;font-weight:800;padding:0 12px}
+.mine{display:flex;gap:6px;flex-wrap:wrap}
+.mine div{display:flex;flex-direction:column;align-items:center;width:64px;border:2px solid var(--line);border-radius:10px;padding:4px}
+.mine svg{width:30px;height:70px}
+.mine span{font-size:10px;width:100%;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mine button{font-size:11px;color:var(--hot);font-weight:800;padding:2px}
+
+/* ゴミ箱 */
+.game{position:fixed;inset:0;z-index:40;background:var(--sky);touch-action:none;overflow:hidden}
+.game[hidden]{display:none}
+.game .msg{position:absolute;left:0;right:0;top:calc(14px + env(safe-area-inset-top,0px));text-align:center;font-weight:800;font-size:16px;padding:0 70px;z-index:2}
+.game .x{position:absolute;right:10px;top:calc(8px + env(safe-area-inset-top,0px));height:40px;padding:0 12px;border-radius:12px;background:var(--card);border:2px solid var(--line);font-weight:800;z-index:3}
+.bin{position:absolute;top:22%;width:22%;height:20%;border-radius:4px 4px 12px 12px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;color:#fff;font-weight:800;font-size:16px}
+.bin::before{content:"";position:absolute;left:12%;right:12%;top:8px;height:12px;border-radius:6px;background:rgba(0,0,0,.55)}
+.bin.can{left:2%;background:#2d6cdf}.bin.pet{left:26.6%;background:#20a35a}.bin.bottle{left:51.3%;background:#9b5a2a}.bin.paper{left:76%;background:#e08a1e;font-size:13px}
+.bin.hit{animation:hit .35s}
+@keyframes hit{50%{transform:scale(1.08)}}
+.floor{position:absolute;left:0;right:0;bottom:0;height:12%;background:var(--asphalt)}
+.thing{position:absolute;width:44px;height:102px;margin:-51px 0 0 -22px;touch-action:none;cursor:grab}
+.thing svg{width:44px;height:102px;pointer-events:none}
+.hintline{position:absolute;left:0;right:0;bottom:14%;text-align:center;font-size:13px;color:var(--ink2)}
+
+/* 空き缶拾い */
+.street{position:absolute;inset:0;background:
+  linear-gradient(var(--sky) 0 18%,#6e9b5a 18% 26%,var(--curb) 26% 28%,var(--asphalt) 28%)}
+.street::after{content:"";position:absolute;left:0;right:0;top:62%;height:4px;background:repeating-linear-gradient(90deg,#e8e2c4 0 30px,transparent 30px 60px);opacity:.5}
+.hud{position:absolute;left:12px;top:calc(56px + env(safe-area-inset-top,0px));display:flex;gap:8px;z-index:2}
+.hud span{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 10px;font-weight:800;font-size:14px}
+.litter{position:absolute;width:30px;height:70px;margin:-35px 0 0 -15px;transition:opacity .3s}
+.litter svg{width:30px;height:70px;pointer-events:none}
+.litter.gone{opacity:0;transform:scale(1.4);transition:all .25s}
+.litter.coin{width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6c8,#e8c25a);border:2px solid #b8902c;font-family:"DotGothic16",monospace;font-size:11px;display:flex;align-items:center;justify-content:center;color:#5b4310;animation:twinkle .8s ease-in-out infinite}
+@keyframes twinkle{50%{box-shadow:0 0 10px 3px rgba(255,230,120,.9)}}
+.plus{position:absolute;font-weight:800;font-size:16px;color:#ffe14d;text-shadow:0 1px 2px rgba(0,0,0,.6);pointer-events:none;transform:translate(-50%,-50%)}
+.result{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(320px,86%);background:var(--card);border-radius:18px;padding:18px;text-align:center;z-index:4;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.result h3{font-size:18px;margin-bottom:8px}
+.result p{font-size:14px;margin:4px 0;color:var(--ink2)}
+.result b{font-family:"DotGothic16",monospace;font-size:26px;color:var(--ink);font-weight:400}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#1d2033;color:#fff;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:800;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+.wave{animation:wave 1.8s linear infinite}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(-30px)}}
+@media (prefers-reduced-motion:reduce){.wave,.slot.rare .art::before,.ticker span,.moth,.slot .steam path,.slot .drip,.cup.has,.litter.coin{animation:none}.ticker span{left:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="purse"><small>財布</small><b id="wallet">0円</b></div>
+    <button class="tbtn go" id="litterBtn">空き缶拾い</button>
+    <button class="tbtn" id="dexBtn">図鑑</button>
+    <button class="tbtn" id="facBtn">工場</button>
+    <button class="tbtn" id="sndBtn" aria-label="音">音</button>
+  </div>
+
+  <div class="vm" id="vm">
+    <div class="cab">
+      <div class="sign"><h1>よるの自販機</h1><small>年中無休・たぶん無害</small><i class="moth m1"></i><i class="moth m2"></i></div>
+      <div class="ticker" aria-live="polite"><span class="dot" id="ticker">いらっしゃいませ</span></div>
+      <div class="case" id="case"><i class="lightbar"></i><div id="rows"></div><div class="glass"></div></div>
+      <div class="sticker">あたり<br>つき!</div>
+
+      <div class="panel">
+        <div class="seg7"><div id="seg"></div><small>投入金額</small></div>
+        <div class="lamps"><span id="lpWin">あたり</span><span id="lpOut">売切あり</span></div>
+        <div class="slots"><div class="coinslot" id="coinslot" aria-hidden="true"></div><div class="billslot" id="billslot" aria-hidden="true"></div></div>
+      </div>
+      <div class="wallet">
+        <button class="coin c10" data-c="10">10</button><button class="coin c50" data-c="50">50</button>
+        <button class="coin c100" data-c="100">100</button><button class="coin c500" data-c="500">500</button>
+        <button class="bill" data-c="1000">千円札</button>
+      </div>
+
+      <div class="lower">
+        <button class="tray" id="tray" aria-label="取り出し口から取る"><span id="trayIn" style="display:flex;gap:2px;align-items:flex-end"></span><span class="flap">PUSH</span></button>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+          <button class="lever" id="lever" aria-label="おつり返却レバー">返却<br>レバー</button>
+        </div>
+      </div>
+      <div class="lower" style="grid-template-columns:1fr 70px;margin-top:6px">
+        <div class="staff"><button id="callBtn">補充を呼ぶ</button><button id="allBtn">総入れ替え</button></div>
+        <button class="cup" id="cup" aria-label="返却口からお金を取る"><span id="cupAmt">0</span><small>返却口</small></button>
+      </div>
+    </div>
+    <button class="under" id="peekBtn">自販機の下をのぞく</button>
+    <div class="lane"><div class="road"></div>
+      <div class="truck" id="truck"><span class="bub" id="truckSay">まいど〜</span>
+        <svg viewBox="0 0 150 66" width="150" height="66" aria-hidden="true">
+          <rect x="52" y="6" width="96" height="46" rx="4" fill="#f4f4f8" stroke="#55597a" stroke-width="2"/>
+          <rect x="58" y="12" width="84" height="22" rx="3" fill="#2347c5"/>
+          <text x="100" y="28" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="M PLUS Rounded 1c, sans-serif">のみもの便</text>
+          <path d="M52 20 H26 L8 36 V52 H52 Z" fill="#e3262f" stroke="#55597a" stroke-width="2"/>
+          <path d="M46 24 H28 L16 36 H46 Z" fill="#cfe6ff"/>
+          <circle cx="32" cy="54" r="9" fill="#2b2d3a"/><circle cx="32" cy="54" r="4" fill="#9aa1b3"/>
+          <circle cx="122" cy="54" r="9" fill="#2b2d3a"/><circle cx="122" cy="54" r="4" fill="#9aa1b3"/>
+          <rect x="4" y="40" width="6" height="5" rx="1" fill="#ffd36b"/>
+        </svg></div>
+    </div>
+  </div>
+
+  <div class="hand">
+    <h2>手持ち <small id="handCnt">0/6</small></h2>
+    <div class="hlist" id="hand"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</div>
+
+<!-- 飲む -->
+<div class="ov" id="drinkOv" hidden><div class="sheet" id="dSheet">
+  <h2><span id="dName"></span><button data-close>閉じる</button></h2>
+  <div class="big" id="dBig"><div class="say" id="dSay"></div><div class="bwrap" id="dWrap"></div></div>
+  <div class="meter" id="dMeter" hidden><span>シュワシュワ度</span><div><i id="dPres"></i></div></div>
+  <div class="lv" id="dLv"></div>
+  <div class="acts">
+    <button class="act" id="shakeBtn">振る</button>
+    <button class="act pri" id="openBtn">開ける</button>
+    <button class="act pri" id="sipBtn">ひとくち飲む</button>
+    <button class="act" id="mixBtn">混ぜる</button>
+    <button class="act warn wide" id="throwBtn">ゴミ箱に捨てにいく</button>
+  </div>
+  <div id="mixPick" hidden><p class="note">混ぜる相手を選んでください(相手は空になります)</p><div class="pick" id="mixList"></div></div>
+</div></div>
+
+<!-- 図鑑 -->
+<div class="ov" id="dexOv" hidden><div class="sheet">
+  <h2>ドリンク図鑑 <small id="dexCnt" style="font-size:13px;color:var(--ink2)"></small><button data-close>閉じる</button></h2>
+  <div class="dex" id="dexGrid"></div>
+  <div class="sec"><h2>自作ドリンク</h2><div class="dex" id="dexMine"></div></div>
+  <div class="sec"><h2>混ぜた記録</h2><div id="dexMix"></div></div>
+</div></div>
+
+<!-- 工場 -->
+<div class="ov" id="facOv" hidden><div class="sheet">
+  <h2>自販機工場<button data-close>閉じる</button></h2>
+  <div class="fact">
+    <div class="prev" id="fPrev"></div>
+    <div>
+      <div class="fld"><label for="fName">名前</label><input type="text" id="fName" maxlength="12" placeholder="例: ねこソーダ"></div>
+      <button class="act" id="fRand" style="width:100%;margin-bottom:10px">ランダムで作る</button>
+      <div class="fld"><label class="chk"><input type="checkbox" id="fFizz"> 炭酸(振ると噴く)</label></div>
+    </div>
+  </div>
+  <div class="fld"><label>中身の色</label><div class="sw" id="fSw"></div></div>
+  <div class="fld"><label>容器 <span id="fTypeLbl"></span></label><div class="shapes" id="fType"></div></div>
+  <div class="fld"><label>ラベルの画像</label><div class="file"><label class="fb" for="fImg" id="fImgLbl">画像を選ぶ</label><button class="mbtn" id="fImgClr">はずす</button></div><input type="file" id="fImg" accept="image/*" hidden></div>
+  <div class="fld"><label for="fPrice">ねだん(円)</label><input type="number" id="fPrice" min="10" max="990" step="10" value="150" inputmode="numeric"></div>
+  <button class="act pri" id="fMake" style="width:100%">作って自販機に並べる</button>
+  <div class="sec"><h2>作ったドリンク</h2><div class="mine" id="fMine"></div></div>
+</div></div>
+
+<!-- ゴミ箱 -->
+<div class="game" id="trashOv" hidden>
+  <div class="msg" id="tMsg">はじいてゴミ箱に入れよう</div>
+  <button class="x" id="tClose">やめる</button>
+  <div class="bin can">缶</div><div class="bin pet">ペット</div><div class="bin bottle">びん</div><div class="bin paper">紙パック</div>
+  <div class="floor"></div>
+  <div class="hintline">指で上にはじく</div>
+  <div class="thing" id="thing"></div>
+</div>
+
+<!-- 空き缶拾い -->
+<div class="game" id="litOv" hidden>
+  <div class="street"></div>
+  <div class="msg" id="lMsg">落ちているのをタップで拾おう</div>
+  <button class="x" id="lClose">帰る</button>
+  <div class="hud"><span id="lTime">20</span><span id="lCnt">0個</span></div>
+  <div id="lField" style="position:absolute;inset:0"></div>
+  <div class="result" id="lRes" hidden></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const KEY = 'yoru-jihanki-1', VER = 'v4';
+
+/* ── 小物 ── */
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const between = (a, b) => a + Math.random() * (b - a);
+const yen = n => n.toLocaleString('ja-JP') + '円';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hex2rgb = h => { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/./g, c => c + c); const n = parseInt(h, 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const rgb2hex = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const shade = (h, k) => rgb2hex(hex2rgb(h).map(v => v * k));
+function hsl(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return rgb2hex([f(0), f(8), f(4)].map(v => v * 255)); }
+function toast(m, ms) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms || 2200); }
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── 保存 ── */
+function fresh() { return { wallet: 1000, credit: 0, cup: 0, slots: [], tray: [], hand: [], log: [], custom: [], mixes: [], stats: { bought: 0, drunk: 0, trash: 0, found: 0, picked: 0, sprayed: 0, trucks: 0 }, lastPeek: 0, free: false, sound: true, uid: 1 }; }
+let S;
+try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || 'null') || {}); } catch (e) { S = fresh(); }
+S.stats = Object.assign(fresh().stats, S.stats || {});
+S.hand.forEach(h => { if (h.opened === undefined) h.opened = true; });     // 前の版で持っていたものは開いていることにする
+let saveT = null;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('保存できませんでした(画像が多すぎるかも)'); } }, 200); }
+
+/* ── 音(端末の中で作る) ── */
+let AC = null;
+const ac = () => (AC = AC || new (window.AudioContext || window.webkitAudioContext)());
+function tone(f, d, type, vol, slide, delay) {
+  if (!S.sound) return;
+  try {
+    const c = ac(), t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + d);
+    g.gain.setValueAtTime(vol || .15, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t + d + .02);
+  } catch (e) {}
+}
+function noise(d, f, vol, type) {
+  if (!S.sound) return;
+  try {
+    const c = ac(), n = Math.floor(c.sampleRate * d), buf = c.createBuffer(1, n, c.sampleRate), ch = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime;
+    src.buffer = buf; fl.type = type || 'bandpass'; fl.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    src.connect(fl).connect(g).connect(c.destination); src.start(t);
+  } catch (e) {}
+}
+const SND = {
+  coin: () => { tone(1800, .07, 'triangle', .12); tone(2500, .09, 'triangle', .1, 0, .06); },
+  bill: () => tone(220, .45, 'sawtooth', .05, 420),
+  gakon: () => { tone(120, .25, 'square', .2, 50); tone(80, .2, 'sine', .25, 40, .09); },
+  jara: () => { for (let i = 0; i < 6; i++) tone(1500 + rnd(1400), .06, 'triangle', .08, 0, i * .05); },
+  gulp: () => tone(420, .18, 'sine', .2, 160),
+  tick: () => tone(900, .03, 'square', .05),
+  win: () => [660, 880, 1100, 1320].forEach((f, i) => tone(f, .14, 'triangle', .14, 0, i * .09)),
+  bubu: () => { tone(160, .22, 'square', .12); tone(140, .3, 'square', .12, 0, .24); },
+  nice: () => { tone(880, .15, 'triangle', .13); tone(1320, .15, 'triangle', .13, 0, .11); },
+  thud: () => tone(90, .18, 'sine', .2, 50),
+  rattle: () => noise(.12, 2600, .18),
+  psh: () => noise(.28, 3500, .22, 'highpass'),
+  spray: () => { noise(.9, 1800, .3); noise(.6, 5000, .15, 'highpass'); },
+  click: () => tone(1200, .04, 'square', .08),
+  pop: () => tone(500, .1, 'sine', .2, 1200),
+  engine: () => { tone(60, 1.4, 'sawtooth', .05, 90); tone(55, 1.4, 'square', .03, 70); },
+  pick: () => tone(700, .08, 'triangle', .12, 1100)
+};
+
+/* ── 電光掲示板 ── */
+const IDLE = ['いらっしゃいませ', 'つめた〜いのも あったか〜いのも 気分しだい', '本日のおすすめ: ぜんぶ', 'あたりが出たら もう1本!', '炭酸は 振るなよ…絶対 振るなよ…',
+  '自販機の下は 見ないでください(見てもいい)', '月曜日サイダー 好評です(たぶん)', '補充のおじさんは 優しい', 'ゴミは ゴミ箱へ。分別すると 30円', '電気代は 気にしないでください',
+  'この自販機は 夜しか本気を出しません', '千円札も 食べます', 'おつりは 返却レバーで(忘れがち)', '中の人など いません'];
+let tickBusy = false;
+function say(m, urgent) {
+  const el = $('ticker');
+  if (!urgent && tickBusy) return;
+  tickBusy = !!urgent;
+  el.textContent = m;
+  el.style.animationDuration = Math.max(7, m.length * .42) + 's';
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  el.style.animationDuration = Math.max(7, m.length * .42) + 's';
+}
+$('ticker').addEventListener('animationiteration', () => { tickBusy = false; say(pick(IDLE)); });
+
+/* ── 7セグ ── */
+const SEGS = { a: [3, 1, 14, 3], b: [16, 3, 3, 13], c: [16, 18, 3, 13], d: [3, 30, 14, 3], e: [1, 18, 3, 13], f: [1, 3, 3, 13], g: [3, 15.5, 14, 3] };
+const DIG = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg', '-': 'g', ' ': '', F: 'aefg', r: 'eg', E: 'adefg' };
+function seg7(str) {
+  str = String(str).slice(-4).padStart(4, ' ');
+  return `<svg viewBox="0 0 ${str.length * 22} 34" style="width:${str.length * 19}px" aria-label="${str.trim()}">` + [...str].map((ch, i) =>
+    Object.entries(SEGS).map(([k, r]) => `<rect x="${i * 22 + r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" rx="1.4" fill="${(DIG[ch] || '').includes(k) ? '#ff3b30' : '#3a1512'}"/>`).join('')).join('') + '</svg>';
+}
+const W = {
+  noun: ['ロック','ジャズ','宇宙','月曜日','金曜日','鉄骨','図書館','台風','恐竜','ロボット','ピアノ','雪だるま','忍者','冷蔵庫','銀河','火山','満月','自転車','電柱','灯台',
+    '惑星','迷路','ペンギン','消しゴム','雷','砂漠','氷河','港','夕焼け','蛍光灯','段ボール','交差点','信号','地下鉄','屋上','花火','将棋','ネオン','カセット','磁石',
+    '時計台','クジラ','サボテン','かかし','観覧車','ドラゴン','ナイト','サンダー','ギャラクシー','メトロ','パズル','ラジオ','テレビ','トンネル','ブランコ','滑り台','ハンマー','ボルト','ナット','クレーン',
+    '幽霊','UFO','カメ','ゴリラ','ネジ','傘','靴下','目覚まし','黒板','ポスト','金庫','ピラミッド','火曜日','深夜','朝礼','残業','定時','給料日','カラオケ','ボウリング'],
+  ext: ['ネオ','スーパー','ダブル','ハイパー','ミッドナイト','ウルトラ','ワイルド','プレミアム','ミニ','メガ'],
+  kind: ['ソーダ','サイダー','コーラ','エード','ジュース','スカッシュ','ドリンク','水','フロート','トニック','スパーク','ラテ','ティー','ミルク','オレ','スムージー','ネクター','ショット'],
+  rare: ['オーロラ','星くず','金の','虹色','伝説の','夜空の','鉄骨吉','ひみつの']
+};
+const FIZZ = ['ソーダ', 'サイダー', 'コーラ', 'エード', 'トニック', 'スパーク'];
+function randColor() { return hsl(between(0, 360), between(55, 95), between(30, 78)); }
+function randName(rare) {
+  const kind = pick(W.kind), head = rare ? pick(W.rare) : Math.random() < .2 ? pick(W.ext) : '';
+  return { name: (head + pick(W.noun) + kind).slice(0, 14), fizz: FIZZ.includes(kind) };
+}
+const fizzOf = d => d.fizz !== undefined ? !!d.fizz : FIZZ.some(k => String(d.name).endsWith(k));
+function genDrink(rareP) {
+  const rare = Math.random() < (rareP || .06), nm = randName(rare);
+  return { id: 'r' + (S.uid++), name: nm.name, fizz: nm.fizz, color: randColor(), color2: rare ? hsl(between(0, 360), 90, between(55, 75)) : null, type: pick(SHAPE_KEYS), rare };
+}
+const MAT_LBL = { can: '缶', pet: 'ペット', bottle: 'びん', paper: '紙パック' };
+const BIN_ADJ = { can: '青い', pet: '緑の', bottle: '茶色の', paper: 'オレンジの' };
+const BASE_PRICE = { can: 120, pet: 150, bottle: 170, paper: 110 };
+const SWATCH = ['#ff4d6d','#ff9f1c','#ffd60a','#7bd389','#2ec4b6','#3a86ff','#8338ec','#ff70a6','#6b4226','#e9f5ff'];
+function slotDrink(sl) { return sl.cid ? S.custom.find(d => d.id === sl.cid) || null : sl.d || null; }
+function labelOf(ref) { const c = ref && S.custom.find(d => d.id === ref); return c ? c.img : null; }
+
+/* ── 容器の絵 ── */
+let gid = 0;
+const CROWN = '<rect x="24" y="5" width="12" height="7" rx="1.5" fill="#d4a017" stroke="#8a6a10" stroke-width="1"/>';
+const LID = (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="7" rx="3" fill="#c9ced9" stroke="#7d8496" stroke-width="1.2"/><rect x="${x + w / 2 - 4}" y="${y - 2}" width="8" height="4" rx="2" fill="#9aa1b3"/>`;
+const PCAP = (x, y, w, h) => c => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${shade(c, .8)}" stroke="rgba(0,0,0,.35)" stroke-width="1"/>`;
+const SHAPE = {
+  can:    { lbl: '缶', mat: 'can', top: 24, hx: 17, path: 'M12 22 Q12 16 18 16 L42 16 Q48 16 48 22 L48 128 Q48 134 42 134 L18 134 Q12 134 12 128 Z', cap: () => LID(15, 11, 30) },
+  slim:   { lbl: 'スリム缶', mat: 'can', top: 22, hx: 22, path: 'M18 20 Q18 14 23 14 L37 14 Q42 14 42 20 L42 128 Q42 134 37 134 L23 134 Q18 134 18 128 Z', cap: () => LID(20, 9, 20) },
+  short:  { lbl: 'ショート缶', mat: 'can', top: 64, hx: 15, path: 'M10 62 Q10 56 16 56 L44 56 Q50 56 50 62 L50 128 Q50 134 44 134 L16 134 Q10 134 10 128 Z', cap: () => LID(13, 51, 34) },
+  botcan: { lbl: 'ボトル缶', mat: 'can', top: 40, hx: 17, path: 'M25 18 L35 18 L35 34 Q48 44 48 60 L48 128 Q48 134 42 134 L18 134 Q12 134 12 128 L12 60 Q12 44 25 34 Z',
+            cap: () => '<rect x="23" y="7" width="14" height="12" rx="2" fill="#b9bfcc" stroke="#6d7487" stroke-width="1"/><path d="M24 10 H36 M24 13 H36 M24 16 H36" stroke="#8a90a2" stroke-width=".8"/>' },
+  pet:    { lbl: 'ペット', mat: 'pet', top: 40, hx: 15, path: 'M26 22 L34 22 L34 30 Q50 38 50 52 L50 126 Q50 134 42 134 L18 134 Q10 134 10 126 L10 52 Q10 38 26 30 Z', cap: PCAP(24, 12, 12, 11) },
+  petsq:  { lbl: '角ペット', mat: 'pet', top: 42, hx: 17, path: 'M26 22 L34 22 L34 30 L48 40 L48 128 Q48 134 42 134 L18 134 Q12 134 12 128 L12 40 L26 30 Z', cap: PCAP(24, 12, 12, 11),
+            extra: '<path d="M12 60 H48 M12 112 H48" stroke="rgba(30,34,60,.3)" stroke-width="1.2"/>' },
+  petmini:{ lbl: 'ミニペット', mat: 'pet', top: 62, hx: 19, path: 'M27 48 L33 48 L33 56 Q46 62 46 74 L46 128 Q46 134 40 134 L20 134 Q14 134 14 128 L14 74 Q14 62 27 56 Z', cap: PCAP(25, 38, 10, 11) },
+  bottle: { lbl: 'びん', mat: 'bottle', top: 32, hx: 17, path: 'M26 10 L34 10 L34 40 Q48 50 48 66 L48 128 Q48 134 42 134 L18 134 Q12 134 12 128 L12 66 Q12 50 26 40 Z', cap: () => CROWN },
+  cola:   { lbl: 'くびれびん', mat: 'bottle', top: 30, hx: 19, path: 'M26 10 L34 10 L34 34 Q46 44 44 62 Q40 80 46 100 L46 128 Q46 134 40 134 L20 134 Q14 134 14 128 L14 100 Q20 80 16 62 Q14 44 26 34 Z', cap: () => CROWN },
+  ramune: { lbl: 'ラムネびん', mat: 'bottle', top: 34, hx: 21, path: 'M24 8 L36 8 L36 20 Q36 26 31 30 Q40 36 44 48 L44 128 Q44 134 38 134 L22 134 Q16 134 16 128 L16 48 Q20 36 29 30 Q24 26 24 20 Z',
+            cap: () => '<rect x="22" y="3" width="16" height="6" rx="2" fill="#4f8fe0" stroke="#2c5aa0" stroke-width="1"/>', extra: '<circle cx="30" cy="22" r="5" fill="rgba(210,240,255,.95)" stroke="rgba(30,34,60,.4)" stroke-width="1"/>' },
+  milk:   { lbl: '牛乳びん', mat: 'bottle', top: 34, hx: 15, path: 'M20 20 L40 20 L40 30 Q50 40 50 56 L50 126 Q50 134 42 134 L18 134 Q10 134 10 126 L10 56 Q10 40 20 30 Z',
+            cap: () => '<rect x="18" y="14" width="24" height="7" rx="2" fill="#f3efe2" stroke="#9b8f70" stroke-width="1"/>' },
+  carton: { lbl: '紙パック', mat: 'paper', top: 50, hx: 17, path: 'M12 44 L30 26 L48 44 L48 134 L12 134 Z',
+            cap: () => '<rect x="22" y="19" width="16" height="9" fill="#f5f2ea" stroke="#9b8f70" stroke-width="1"/>', extra: '<path d="M12 44 H48 M30 26 V44" stroke="rgba(30,34,60,.35)" stroke-width="1.2"/>' }
+};
+const SHAPE_KEYS = Object.keys(SHAPE);
+const matOf = t => (SHAPE[t] || SHAPE.can).mat;
+function art(d, level, opt) {
+  opt = opt || {};
+  const s = SHAPE[d.type] || SHAPE.can, id = 'g' + (++gid), bot = 134;
+  const y = bot - (bot - s.top) * Math.max(0, Math.min(1, level));
+  const col = d.color, img = opt.img !== undefined ? opt.img : labelOf(d.label || (d.custom ? d.id : null));
+  const wave = `M-40 ${y} q7.5 -3 15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 V140 H-40 Z`;
+  let liq = level > 0.001 ? `<path class="${opt.anim ? 'wave' : ''}" d="${wave}" fill="${col}"/>` : '';
+  if (level > 0.001 && d.color2) liq += `<rect x="0" y="${Math.max(y, 80)}" width="60" height="${bot}" fill="${d.color2}" opacity=".75"/>` +
+    [[20, 110], [38, 96], [28, 124], [42, 118], [18, 92]].filter(p => p[1] > y + 4).map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="1.6" fill="#fff"/>`).join('');
+  if (level > 0.001 && !d.color2) liq += `<circle cx="22" cy="${Math.min(124, y + 30)}" r="2" fill="#fff" opacity=".45"/><circle cx="36" cy="${Math.min(128, y + 54)}" r="1.4" fill="#fff" opacity=".4"/>`;
+  const label = img ? `<image href="${img}" x="0" y="68" width="60" height="34" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})" opacity=".92"/>`
+    : `<rect x="0" y="74" width="60" height="18" fill="#fff" opacity=".42" clip-path="url(#${id})"/><rect x="0" y="80" width="60" height="5" fill="${shade(col, .7)}" opacity=".55" clip-path="url(#${id})"/>`;
+  return `<svg viewBox="0 0 60 140" aria-hidden="true"><defs><clipPath id="${id}"><path d="${s.path}"/></clipPath></defs>
+    ${s.cap(col)}<path d="${s.path}" fill="rgba(255,255,255,.55)"/>
+    <g clip-path="url(#${id})">${liq}</g>${label}
+    <path d="${s.path}" fill="none" stroke="rgba(30,34,60,.55)" stroke-width="1.6"/>${s.extra || ''}
+    <path d="M${s.hx} ${s.top + 6} L${s.hx} 122" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".55"/></svg>`;
+}
+
+/* ── 入荷 ── */
+function newSlot(rareP) {
+  if (S.custom.length && Math.random() < .18) { const c = pick(S.custom); return { cid: c.id, stock: 3, hot: (matOf(c.type) === 'can' || matOf(c.type) === 'bottle') && Math.random() < .2, price: c.price }; }
+  const d = genDrink(rareP), m = matOf(d.type), hot = (m === 'can' || m === 'bottle') && !d.fizz && Math.random() < .25;
+  return { d, stock: d.rare ? 1 : 3 + rnd(3), hot, price: BASE_PRICE[m] + rnd(4) * 10 + (d.rare ? 50 : 0) };
+}
+const soldOut = () => S.slots.filter(sl => sl.stock <= 0 || !slotDrink(sl)).length;
+
+/* ── 描く ── */
+function render() {
+  $('wallet').textContent = yen(S.wallet);
+  $('seg').innerHTML = rolling ? $('seg').innerHTML : seg7(S.free ? 'FrEE' : S.credit);
+  $('lpWin').classList.toggle('on', S.free); $('lpWin').classList.toggle('win', S.free);
+  const so = soldOut(); $('lpOut').classList.toggle('on', so > 0); $('lpOut').classList.toggle('out', so > 0);
+  $('sndBtn').textContent = S.sound ? '音' : '消音';
+  let h = '';
+  for (let r = 0; r < 3; r++) {
+    h += '<div class="row">';
+    for (let c = 0; c < 4; c++) {
+      const i = r * 4 + c, sl = S.slots[i], d = sl && slotDrink(sl);
+      if (!d) { h += `<div class="slot" data-s="${i}"><div class="art"></div><div class="plate"><span class="nm">(からっぽ)</span><span class="pr">---</span></div><button class="pbtn out" disabled>売切<i></i></button></div>`; continue; }
+      const out = sl.stock <= 0, ok = !out && !truckBusy && (S.free || S.credit >= sl.price);
+      const fx = sl.hot ? `<svg class="steam" viewBox="0 0 30 18"><path d="M8 16 q-4 -5 0 -9 t0 -7 M16 16 q-4 -5 0 -9 t0 -7 M24 16 q-4 -5 0 -9 t0 -7" stroke="#e3262f" stroke-width="1.6" fill="none" opacity=".55"/></svg>` : '<i class="drip"></i>';
+      h += `<div class="slot${d.rare && !out ? ' rare' : ''}" data-s="${i}"><div class="art">${fx}${art(d, 1)}</div>
+        <div class="plate"><span class="nm">${esc(d.name)}</span><span class="tag ${sl.hot ? 'h' : 'c'}">${sl.hot ? 'あったか〜い' : 'つめた〜い'}</span><span class="pr">${sl.price}</span></div>
+        <button class="pbtn${out ? ' out' : ok ? ' ok' : ''}" data-i="${i}" aria-label="${esc(d.name)} ${sl.price}円">${out ? '売切' : ''}<i></i></button></div>`;
+    }
+    h += '</div>';
+  }
+  $('rows').innerHTML = h;
+  $('rows').querySelectorAll('.pbtn[data-i]').forEach(b => b.onclick = () => buy(+b.dataset.i));
+  document.querySelectorAll('.coin,.bill').forEach(b => b.disabled = S.wallet < +b.dataset.c);
+  $('trayIn').innerHTML = S.tray.filter(t => !t.arriving).slice(-5).map(t => art(t, t.level)).join('');
+  $('cupAmt').textContent = S.cup ? S.cup + '円' : '0';
+  $('cup').classList.toggle('has', S.cup > 0);
+  $('handCnt').textContent = S.hand.length + '/6';
+  $('hand').innerHTML = S.hand.length ? S.hand.map((x, i) => `<button class="hitem" data-h="${i}">${!x.opened ? '<b>未開封</b>' : ''}${art(x, x.level)}<span>${esc(x.name)}</span></button>`).join('')
+    : '<p class="hempty">' + (S.wallet + S.credit + S.cup < 100 ? 'お金がない…。上の「空き缶拾い」で稼ごう' : 'お金を入れてボタンを押してね') + '</p>';
+  $('hand').querySelectorAll('[data-h]').forEach(b => b.onclick = () => openDrink(+b.dataset.h));
+  const st = S.stats;
+  $('stats').innerHTML = `<span>買った ${st.bought}本</span><span>飲みほした ${st.drunk}本</span><span>噴き出させた ${st.sprayed}回</span><span>分別できた ${st.trash}本</span><span>拾ったゴミ ${st.picked}個</span><span>図鑑 ${S.log.length}種</span><span>${VER}</span>`;
+}
+
+/* ── お金を入れる(硬貨・千円札が飛んでいく) ── */
+function flyTo(fromEl, toEl, html, ms) {
+  return new Promise(res => {
+    const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect(), f = document.createElement('div');
+    f.className = 'fly'; f.innerHTML = html; f.style.left = a.left + a.width / 2 - 14 + 'px'; f.style.top = a.top + a.height / 2 - 14 + 'px';
+    document.body.appendChild(f);
+    if (reduce || !f.animate) { f.remove(); res(); return; }
+    const dx = b.left + b.width / 2 - a.left - a.width / 2, dy = b.top + b.height / 2 - a.top - a.height / 2;
+    f.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: `translate(${dx * .5}px,${dy * .5 - 40}px) scale(.9)` }, { transform: `translate(${dx}px,${dy}px) scale(.5)`, opacity: .6 }], { duration: ms || 420, easing: 'ease-in' }).onfinish = () => { f.remove(); res(); };
+  });
+}
+document.querySelectorAll('.coin,.bill').forEach(b => b.onclick = async () => {
+  const c = +b.dataset.c; if (S.wallet < c) return;
+  if (S.credit + c > 3000) { say('もう 入りません(おなかいっぱい)', true); SND.bubu(); return; }
+  S.wallet -= c; render();
+  if (c === 1000) { SND.bill(); await flyTo(b, $('billslot'), '<div style="width:44px;height:22px;border-radius:3px;background:#cfe3c8;border:1px solid #8fb383"></div>', 600); }
+  else await flyTo(b, $('coinslot'), `<div style="width:28px;height:28px;border-radius:50%;background:${c === 10 ? '#d98a4b' : c === 500 ? '#e8c25a' : '#dde1ea'};border:2px solid rgba(0,0,0,.25)"></div>`);
+  S.credit += c; SND.coin(); save(); render();
+  if (c === 1000) say('千円札 いただきました(おいしい)', true);
+});
+$('lever').onclick = () => {
+  const l = $('lever'); l.classList.remove('pull'); void l.offsetWidth; l.classList.add('pull');
+  if (!S.credit) { SND.click(); say('おつりは ありません(気持ちだけ 返します)', true); return; }
+  S.cup += S.credit; S.credit = 0; SND.jara(); save(); render(); say('ジャラジャラ…返却口を見てね', true);
+};
+$('cup').onclick = () => { if (!S.cup) { toast('返却口はからっぽ'); return; } S.wallet += S.cup; toast(yen(S.cup) + ' 財布に戻しました'); S.cup = 0; SND.coin(); save(); render(); };
+
+/* ── 買う → 落ちる → 当たり ── */
+let rolling = false, truckBusy = false;
+const BUY_SAY = ['まいどあり!', 'いい選択です(適当)', 'それ さっきまで 冷えてました', 'お目が高い', 'ガコン!(言いたかった)', 'ありがとうございました また来てね', 'それ 人気です(当社比)'];
+async function buy(i) {
+  if (rolling) return;
+  if (truckBusy) { say('ただいま補充中です ちょっと待ってね', true); return; }
+  const sl = S.slots[i], d = slotDrink(sl); if (!d || sl.stock <= 0) return;
+  const free = S.free;
+  if (!free && S.credit < sl.price) { say('お金が 足りません(あと ' + (sl.price - S.credit) + '円)', true); SND.tick(); return; }
+  if (free) S.free = false; else S.credit -= sl.price;
+  sl.stock--; S.stats.bought++;
+  if (!d.custom && !S.log.some(x => x.id === d.id)) { S.log.unshift({ id: d.id, name: d.name, color: d.color, color2: d.color2, type: d.type, rare: d.rare }); S.log = S.log.slice(0, 300); }
+  const t = { uid: S.uid++, did: d.id, name: d.name, color: d.color, color2: d.color2, type: d.type, hot: sl.hot, rare: d.rare, fizz: fizzOf(d), label: d.custom ? d.id : null, level: 1, opened: false, pres: 0, arriving: true };
+  S.tray.push(t); save();
+  const src = document.querySelector(`.slot[data-s="${i}"] .art`);
+  render(); rolling = true;
+  await flyTo(src, $('tray'), `<div style="width:30px;height:70px">${art(d, 1)}</div>`, 560);
+  delete t.arriving; SND.gakon();
+  const vm = $('vm'); vm.classList.remove('shake'); void vm.offsetWidth; vm.classList.add('shake');
+  rolling = false; render(); save();
+  if (free) { say('あたりの1本! どうぞ どうぞ', true); return; }
+  say(pick(BUY_SAY), true);
+  roulette();
+}
+function roulette() {
+  rolling = true;
+  const win = Math.random() < 1 / 8; let n = 0;
+  const iv = setInterval(() => {
+    n++; SND.tick();
+    $('seg').innerHTML = seg7(n < 16 ? String(rnd(10000)).padStart(4, '0') : win ? '7777' : '7' + rnd(10) + '7' + rnd(10));
+    if (n >= 16) {
+      clearInterval(iv);
+      setTimeout(() => { rolling = false; if (win) { S.free = true; SND.win(); say('あたり!! もう1本 えらんでね', true); save(); } render(); }, win ? 700 : 600);
+    }
+  }, 70);
+}
+$('tray').onclick = () => {
+  const tr = $('tray'); tr.classList.add('open'); setTimeout(() => tr.classList.remove('open'), 500);
+  const items = S.tray.filter(t => !t.arriving);
+  if (!items.length) { toast('取り出し口は からっぽ'); return; }
+  if (S.hand.length >= 6) { toast('手持ちがいっぱい。飲むか捨ててから取ってね'); return; }
+  const t = items[0]; S.tray = S.tray.filter(x => x !== t); S.hand.push(t); save(); render(); openDrink(S.hand.length - 1);
+};
+
+/* ── 自販機の下 ── */
+$('peekBtn').onclick = () => {
+  const wait = 10000 - (Date.now() - S.lastPeek);
+  if (wait > 0) { toast('さっき見たばかり。あと ' + Math.ceil(wait / 1000) + '秒'); return; }
+  S.lastPeek = Date.now();
+  if (Math.random() < .4) {
+    const v = Math.random() < .5 ? 10 : Math.random() < .6 ? 50 : Math.random() < .85 ? 100 : 500;
+    S.wallet += v; S.stats.found += v; SND.coin(); toast(v + '円 みっけ!' + (v === 500 ? ' (今日はいい日)' : ''));
+  } else {
+    SND.thud(); toast(pick(['ほこりしかない…', 'ボタンが落ちてた', 'ナットがひとつ(鉄骨用?)', '猫と目が合った', 'レシート(読めない)', 'セミの抜けがら', '誰かの 決意', 'なにもない。自販機に笑われた気がする']));
+  }
+  save(); render();
+};
+
+/* ── 補充トラック ── */
+let truckPending = false;
+async function callTruck(mode) {
+  if (truckBusy) return;
+  if (mode === 'fill' && !soldOut()) { say('売り切れが ないので 補充は来ません(休憩中)', true); return; }
+  truckBusy = true; render();
+  const special = Math.random() < 1 / 6, tk = $('truck'), lane = tk.parentElement.getBoundingClientRect();
+  say(special ? '特別便が 来ました! レアが 多めかも' : '補充トラックが 来ました', true);
+  SND.engine();
+  tk.style.transition = ''; tk.style.left = Math.max(10, lane.width - 165) + 'px';
+  await wait(1700);
+  const talk = (m, ms) => { $('truckSay').textContent = m; tk.classList.add('talk'); return wait(ms || 1100).then(() => tk.classList.remove('talk')); };
+  await talk(special ? '今日は 特別便ですよ〜' : pick(['毎度〜 のみもの便です', '今日も いいの 入ってますよ', '重いなあ…(独り言)', 'あ、その缶 振っちゃダメですよ', 'レア? 入ってるかもね']));
+  const idx = S.slots.map((sl, i) => i).filter(i => mode === 'all' || S.slots[i].stock <= 0 || !slotDrink(S.slots[i]));
+  for (const i of idx) {
+    S.slots[i] = newSlot(special ? .25 : .06); render();
+    const el = document.querySelector(`.slot[data-s="${i}"]`); if (el) el.classList.add('fill');
+    SND.click(); await wait(170);
+  }
+  S.stats.trucks++; save();
+  await talk(pick(['ほな また〜', 'がんばってね〜', '次は 月曜日に(うそ)', 'おつかれさまです〜']), 900);
+  tk.style.left = '-170px'; SND.engine();
+  await wait(1700);
+  tk.style.transition = 'none'; tk.style.left = '100%';
+  truckBusy = false; render();
+  const rare = S.slots.some(sl => sl.d && sl.d.rare && sl.stock > 0);
+  say(mode === 'all' ? '総入れ替え 完了!' + (rare ? ' 光ってるのは レア' : '') : '補充 完了!' + (rare ? ' 光ってるのは レア' : ''), true);
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+$('callBtn').onclick = () => callTruck('fill');
+$('allBtn').onclick = () => callTruck('all');
+setInterval(() => {          // 売り切れが増えたら、そのうち勝手に来る
+  if (truckBusy || truckPending || document.hidden || soldOut() < 4) return;
+  truckPending = true; say('まもなく 補充トラックが 来ます', true);
+  setTimeout(() => { truckPending = false; callTruck('fill'); }, 10000 + rnd(10000));
+}, 4000);
+setInterval(() => { if (reduce || Math.random() > .35) return; const c = $('case'); c.classList.remove('flicker'); void c.offsetWidth; c.classList.add('flicker'); }, 9000);
+
+/* ── 飲む: 振る・開ける・飲む・混ぜる ── */
+let cur = -1, presT = null;
+const OPEN_LBL = { can: 'プルタブを開ける', slim: 'プルタブを開ける', short: 'プルタブを開ける', botcan: 'キャップを開ける', pet: 'キャップを開ける', petsq: 'キャップを開ける', petmini: 'キャップを開ける',
+  bottle: '栓を抜く', cola: '栓を抜く', ramune: 'ビー玉を押し込む', milk: 'フタを開ける', carton: 'ストローを刺す' };
+function openDrink(i) {
+  cur = i; $('mixPick').hidden = true; drawDrink(); $('drinkOv').hidden = false;
+  clearInterval(presT);
+  presT = setInterval(() => { const h = S.hand[cur]; if ($('drinkOv').hidden) { clearInterval(presT); return; } if (h && !h.opened && h.pres > 0) { h.pres = Math.max(0, h.pres - .012); meter(); } }, 400);
+}
+function meter() { const h = S.hand[cur]; if (h) $('dPres').style.width = Math.round((h.pres || 0) * 100) + '%'; }
+function bubble(m) { const b = $('dSay'); b.textContent = m; b.classList.add('show'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('show'), 1400); }
+function drawDrink() {
+  const h = S.hand[cur]; if (!h) { $('drinkOv').hidden = true; return; }
+  $('dName').textContent = h.name + (h.fizz ? ' (炭酸)' : '');
+  $('dWrap').innerHTML = art(h, h.level, { anim: h.opened });
+  $('dMeter').hidden = !(h.fizz && !h.opened); meter();
+  $('dLv').textContent = !h.opened ? '未開封' + (h.hot ? '・あったか〜い' : '') : h.level > 0 ? 'のこり ' + Math.round(h.level * 100) + '%' : 'からっぽ(' + MAT_LBL[matOf(h.type)] + 'のゴミ)';
+  $('shakeBtn').hidden = h.opened; $('openBtn').hidden = h.opened; $('openBtn').textContent = OPEN_LBL[h.type] || '開ける';
+  $('sipBtn').hidden = !h.opened; $('mixBtn').hidden = !h.opened; $('throwBtn').hidden = !h.opened;
+  $('sipBtn').disabled = h.level <= 0;
+  $('mixBtn').disabled = h.level <= 0 || !S.hand.some((o, k) => k !== cur && o.opened && o.level > 0);
+  $('throwBtn').disabled = h.level > 0;
+  $('throwBtn').textContent = h.level > 0 ? '飲みほしたら捨てられます' : 'ゴミ箱に捨てにいく';
+  $('dWrap').querySelector('svg').onclick = () => h.opened ? sip() : shake();
+}
+function shake() {
+  const h = S.hand[cur]; if (!h || h.opened) return;
+  const b = $('dBig'); b.classList.remove('wob'); void b.offsetWidth; b.classList.add('wob');
+  SND.rattle();
+  if (h.fizz) { h.pres = Math.min(1, (h.pres || 0) + .17); meter(); bubble(h.pres > .85 ? '限界です!!!' : h.pres > .55 ? 'パンパン…' : h.pres > .3 ? 'シュワシュワ…' : 'シャカシャカ'); }
+  else bubble(pick(['よく振ってからお飲みください(正解)', 'シャカシャカ', '中身は 落ち着いている', '振っても 何も起きない']));
+  save();
+}
+function spray(h, power) {
+  const box = $('dBig'), wrap = $('dWrap'), s = SHAPE[h.type] || SHAPE.can;
+  const bx = wrap.offsetLeft + 60, by = wrap.offsetTop + Math.max(10, (s.top - 18) * 2);
+  if (reduce) return;
+  for (let i = 0; i < 18 + power * 30; i++) {
+    const d = document.createElement('i'), sz = 4 + rnd(9);
+    d.className = 'drop'; Object.assign(d.style, { width: sz + 'px', height: sz + 'px', left: bx + 'px', top: by + 'px', background: i % 4 ? h.color : '#fff', opacity: .9 });
+    box.appendChild(d);
+    const dx = between(-160, 160) * (.5 + power), dy = -between(60, 220) * (.4 + power);
+    d.animate([{ transform: 'translate(0,0)' }, { transform: `translate(${dx * .6}px,${dy}px)` }, { transform: `translate(${dx}px,${dy + 260}px)`, opacity: 0 }], { duration: 900 + rnd(500), easing: 'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => d.remove();
+  }
+  const sh = $('dSheet'); sh.animate && sh.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 300, iterations: 2 });
+}
+$('shakeBtn').onclick = shake;
+$('openBtn').onclick = () => {
+  const h = S.hand[cur]; if (!h || h.opened) return;
+  h.opened = true;
+  if (h.fizz && (h.pres || 0) > .25) {
+    const lose = Math.min(.75, h.pres * .75); h.level = Math.max(0, +(h.level - lose).toFixed(3));
+    SND.spray(); spray(h, h.pres); S.stats.sprayed++;
+    bubble('プシャーーッ!!'); toast(Math.round(lose * 100) + '% 噴き出した…' + (lose > .6 ? ' (ほぼ床が飲んだ)' : ''), 2600);
+  } else if (h.fizz) { SND.psh(); bubble('プシュッ(いい音)'); }
+  else if (h.type === 'ramune') { SND.pop(); bubble('ポンッ! ビー玉が落ちた'); }
+  else if (h.type === 'carton') { SND.click(); bubble('ストロー ぷすっ'); }
+  else { SND.click(); bubble('カチッ'); }
+  h.pres = 0;
+  if (h.level <= 0) { h.level = 0; toast('全部 噴き出した… 一滴も飲めなかった', 3000); }
+  save(); render(); drawDrink();
+};
+function sip() {
+  const h = S.hand[cur]; if (!h || !h.opened || h.level <= 0) return;
+  h.level = Math.max(0, +(h.level - .14).toFixed(3)); SND.gulp();
+  if (h.level <= 0.01) { h.level = 0; S.stats.drunk++; bubble('ぷはー!'); toast(pick(['ぷはー。飲みほした!', '完飲! えらい', '飲みほした。なんの味だったんだろう'])); }
+  else bubble(pick(['ごくっ', 'ごくごく', 'うまい(気がする)', h.hot ? 'あちっ' : 'ひえっ', 'ふしぎな味']));
+  save(); render(); drawDrink();
+}
+$('sipBtn').onclick = sip;
+$('mixBtn').onclick = () => {
+  const box = $('mixList'), list = S.hand.map((o, k) => ({ o, k })).filter(x => x.k !== cur && x.o.opened && x.o.level > 0);
+  box.innerHTML = list.map(x => `<button data-k="${x.k}">${art(x.o, x.o.level)}<span>${esc(x.o.name)}</span></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => mix(+b.dataset.k));
+  $('mixPick').hidden = false;
+};
+function mix(k) {
+  const a = S.hand[cur], b = S.hand[k], wa = a.level, wb = b.level, ra = hex2rgb(a.color), rb = hex2rgb(b.color);
+  const col = rgb2hex(ra.map((v, i) => (v * wa + rb[i] * wb) / (wa + wb)));
+  const nm = (a.name.slice(0, Math.ceil(a.name.length / 2)) + b.name.slice(Math.floor(b.name.length / 2))).slice(0, 14);
+  S.mixes.unshift({ name: nm, from: a.name + ' × ' + b.name, color: col }); S.mixes = S.mixes.slice(0, 40);
+  Object.assign(a, { name: nm, color: col, color2: null, level: Math.min(1, wa + wb), mixed: true, rare: false, fizz: a.fizz || b.fizz });
+  b.level = 0; SND.gulp(); SND.nice();
+  toast('「' + nm + '」ができた!(責任はとれません)'); save(); render(); $('mixPick').hidden = true; drawDrink();
+}
+
+/* ── ゴミ箱に投げる ── */
+const T = { on: false };
+$('throwBtn').onclick = () => { const h = S.hand[cur]; if (!h || h.level > 0) return; $('drinkOv').hidden = true; startThrow(h); };
+function startThrow(h) {
+  T.h = h; T.on = true; $('trashOv').hidden = false;
+  $('thing').innerHTML = art(h, 0); $('thing').style.visibility = '';
+  const m = matOf(h.type);
+  $('tMsg').textContent = 'これは「' + MAT_LBL[m] + '」。' + BIN_ADJ[m] + '箱に入れよう';
+  resetThing();
+}
+function resetThing() {
+  const r = $('trashOv').getBoundingClientRect();
+  Object.assign(T, { x: r.width / 2, y: r.height * .8, vx: 0, vy: 0, fly: false, rot: 0, W: r.width, H: r.height });
+  place();
+}
+function place() { const el = $('thing'); el.style.left = T.x + 'px'; el.style.top = T.y + 'px'; el.style.transform = `rotate(${T.rot}deg)`; }
+(function bindThrow() {
+  const el = $('thing'); let pts = [], drag = false;
+  el.addEventListener('pointerdown', e => { if (T.fly) return; drag = true; el.setPointerCapture(e.pointerId); pts = [{ x: e.clientX, y: e.clientY, t: performance.now() }]; });
+  el.addEventListener('pointermove', e => {
+    if (!drag) return; const r = $('trashOv').getBoundingClientRect();
+    T.x = e.clientX - r.left; T.y = Math.max(r.height * .55, e.clientY - r.top); place();
+    pts.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (pts.length > 6) pts.shift();
+  });
+  const up = () => {
+    if (!drag) return; drag = false;
+    const a = pts[0], b = pts[pts.length - 1], dt = Math.max(16, b.t - a.t);
+    let vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt;
+    if (vy > -0.35) { resetThing(); return; }
+    const sp = Math.hypot(vx, vy), max = 3.2; if (sp > max) { vx *= max / sp; vy *= max / sp; }
+    Object.assign(T, { vx, vy, fly: true, last: performance.now() }); requestAnimationFrame(step);
+  };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+})();
+function step(now) {
+  if (!T.on || !T.fly) return;
+  const dt = Math.min(32, now - T.last); T.last = now;
+  const g = T.H * 0.0000055, py = T.y;
+  T.vy += g * dt; T.x += T.vx * dt; T.y += T.vy * dt; T.rot += T.vx * dt * 1.2;
+  if (T.x < 22 || T.x > T.W - 22) { T.vx = -T.vx * .6; T.x = Math.max(22, Math.min(T.W - 22, T.x)); }
+  const binTop = T.H * .22 + 14;
+  if (T.vy > 0 && py < binTop && T.y >= binTop) {
+    for (const [k, l] of [['can', .02], ['pet', .266], ['bottle', .513], ['paper', .76]]) {
+      const x0 = T.W * l + T.W * .22 * .12, x1 = T.W * l + T.W * .22 * .88;
+      if (T.x > x0 && T.x < x1) { landed(k); return; }
+    }
+  }
+  if (T.y > T.H * .9) { T.fly = false; SND.thud(); $('tMsg').textContent = pick(['はずれ… もう一回!', 'カラン…(床に落ちた)', 'おしい! もう一回']); setTimeout(() => T.on && resetThing(), 700); place(); return; }
+  place(); requestAnimationFrame(step);
+}
+function landed(kind) {
+  T.fly = false; const h = T.h, bin = document.querySelector('.bin.' + kind), m = matOf(h.type);
+  bin.classList.remove('hit'); void bin.offsetWidth; bin.classList.add('hit');
+  if (kind === m) {
+    SND.nice(); S.hand = S.hand.filter(x => x !== h); S.stats.trash++; S.wallet += 30;
+    $('tMsg').textContent = 'ナイス分別! 回収のお礼 +30円'; $('thing').style.visibility = 'hidden'; save(); render();
+    setTimeout(closeThrow, 1100);
+  } else {
+    SND.bubu();
+    $('tMsg').textContent = 'ブブー! そこは「' + MAT_LBL[kind] + '」の箱。これは「' + MAT_LBL[m] + '」なので ' + BIN_ADJ[m] + '箱へ';
+    setTimeout(() => T.on && resetThing(), 900);
+  }
+}
+function closeThrow() { T.on = false; T.fly = false; $('trashOv').hidden = true; render(); }
+$('tClose').onclick = closeThrow;
+window.addEventListener('resize', () => { if (T.on && !T.fly) resetThing(); });
+
+/* ── 空き缶拾い(お金を稼ぐ) ── */
+const L = { on: false };
+$('litterBtn').onclick = () => {
+  Object.assign(L, { on: true, time: 20, n: 0, coins: 0 });
+  $('lField').innerHTML = ''; $('lRes').hidden = true; $('litOv').hidden = false;
+  $('lMsg').textContent = '落ちているのを タップで拾おう'; hud();
+  clearInterval(L.tt); clearTimeout(L.st);
+  L.tt = setInterval(() => { L.time--; hud(); if (L.time <= 0) endLitter(); }, 1000);
+  spawnLoop();
+};
+function hud() { $('lTime').textContent = '残り ' + Math.max(0, L.time) + '秒'; $('lCnt').textContent = L.n + '個' + (L.coins ? ' + ' + L.coins + '円' : ''); }
+function spawnLoop() {
+  if (!L.on || L.time <= 0) return;
+  spawn(); L.st = setTimeout(spawnLoop, 450 + rnd(550));
+}
+function spawn() {
+  const f = $('lField'), el = document.createElement('button');
+  const x = between(8, 92), y = between(34, 90), isCoin = Math.random() < .12;
+  el.style.left = x + '%'; el.style.top = y + '%';
+  if (isCoin) { const v = Math.random() < .6 ? 10 : Math.random() < .75 ? 50 : 100; el.className = 'litter coin'; el.textContent = v; el.dataset.v = v; }
+  else { const d = { type: pick(SHAPE_KEYS), color: randColor() }; el.className = 'litter'; el.innerHTML = art(d, 0, { img: null }); el.style.transform = `rotate(${pick([-1, 1]) * between(60, 115)}deg)`; }
+  el.setAttribute('aria-label', isCoin ? '小銭' : 'ゴミ');
+  el.onpointerdown = () => {
+    if (el.classList.contains('gone') || !L.on) return; el.classList.add('gone'); SND.pick();
+    if (el.dataset.v) { L.coins += +el.dataset.v; SND.coin(); } else { L.n++; if (L.n % 6 === 0) $('lMsg').textContent = pick(['いいペース!', '街が きれいになっていく…', 'ゴミ拾いの才能あり', '誰だ こんなに捨てたの', 'その調子!']); }
+    const pl = document.createElement('i'); pl.className = 'plus'; pl.textContent = '+' + (el.dataset.v || 10) + '円'; pl.style.left = el.style.left; pl.style.top = el.style.top; f.appendChild(pl);
+    pl.animate ? pl.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(-50%,-140%)', opacity: 0 }], { duration: 700 }).onfinish = () => pl.remove() : setTimeout(() => pl.remove(), 700);
+    hud(); setTimeout(() => el.remove(), 260);
+  };
+  f.appendChild(el);
+  setTimeout(() => { if (!el.classList.contains('gone')) { el.style.opacity = 0; setTimeout(() => el.remove(), 300); } }, 2600 + rnd(1400));
+}
+function endLitter() {
+  if (!L.on) return;
+  L.on = false; clearInterval(L.tt); clearTimeout(L.st);
+  const pay = L.n * 10, bonus = L.n >= 15 ? 50 : 0, total = pay + bonus + L.coins;
+  $('lRes').innerHTML = `<h3>${L.n >= 15 ? 'ゴミ拾い名人!' : L.n >= 6 ? 'おつかれさま!' : 'まあ、こんな日もある'}</h3>
+    <p>拾ったゴミ ${L.n}個 × 10円(リサイクル)</p>${bonus ? '<p>がんばった賞 +50円</p>' : ''}${L.coins ? '<p>落ちていた小銭 +' + L.coins + '円</p>' : ''}
+    <p style="margin-top:8px"><b>+${total}円</b></p><button class="act pri" id="lGet" style="width:100%;margin-top:12px">受け取る</button>`;
+  $('lRes').hidden = false;
+  $('lGet').onclick = () => { S.wallet += total; S.stats.picked += L.n; S.stats.found += L.coins; save(); render(); $('litOv').hidden = true; if (total) { SND.jara(); toast('+' + total + '円。働いたあとの一杯は うまい'); } };
+}
+$('lClose').onclick = () => { if (L.on) endLitter(); else $('litOv').hidden = true; };
+
+/* ── 図鑑 ── */
+$('dexBtn').onclick = () => {
+  const nr = S.log.filter(d => d.rare).length;
+  $('dexCnt').textContent = S.log.length + '種' + (nr ? '(レア ' + nr + ')' : '');
+  $('dexGrid').innerHTML = S.log.length ? S.log.map(d => `<div class="dcell${d.rare ? ' r' : ''}">${art(d, 1, { img: null })}<span>${esc(d.name)}</span></div>`).join('')
+    : '<p class="note" style="grid-column:span 4">買ったドリンクが、ここに集まっていきます</p>';
+  $('dexMine').innerHTML = S.custom.length ? S.custom.map(d => `<div class="dcell">${art(d, 1)}<span>${esc(d.name)}</span></div>`).join('')
+    : '<p class="note" style="grid-column:span 4">工場で作ると、ここに並びます</p>';
+  $('dexMix').innerHTML = S.mixes.length ? S.mixes.map(m => `<div class="mixrow"><i style="background:${m.color}"></i><b>${esc(m.name)}</b><span style="color:var(--ink2);font-size:12px">${esc(m.from)}</span></div>`).join('')
+    : '<p class="note">飲みかけ同士を「混ぜる」と記録されます</p>';
+  $('dexOv').hidden = false;
+};
+
+/* ── 工場 ── */
+const F = { type: 'can', color: SWATCH[0], img: null };
+function drawFac() {
+  $('fPrev').innerHTML = art({ color: F.color, type: F.type }, .85, { img: F.img, anim: true });
+  $('fType').innerHTML = SHAPE_KEYS.map(k => `<button data-t="${k}" class="${k === F.type ? 'on' : ''}" aria-label="${SHAPE[k].lbl}">${art({ type: k, color: F.color }, .7, { img: null })}</button>`).join('');
+  $('fType').querySelectorAll('button').forEach(b => b.onclick = () => { F.type = b.dataset.t; drawFac(); });
+  { const a = SHAPE[F.type].lbl, m = MAT_LBL[matOf(F.type)]; $('fTypeLbl').textContent = '(' + (a === m ? a : a + ' / ' + m + 'のゴミ') + ')'; }
+  $('fSw').innerHTML = SWATCH.map(c => `<button style="background:${c}" data-c="${c}" class="${c === F.color ? 'on' : ''}" aria-label="色 ${c}"></button>`).join('') + `<input type="color" id="fCol" value="${F.color}" aria-label="好きな色">`;
+  $('fSw').querySelectorAll('button').forEach(b => b.onclick = () => { F.color = b.dataset.c; drawFac(); });
+  $('fCol').oninput = e => { F.color = e.target.value; $('fPrev').innerHTML = art({ color: F.color, type: F.type }, .85, { img: F.img, anim: true }); };
+  $('fCol').onchange = () => drawFac();
+  $('fImgLbl').textContent = F.img ? '画像を変える' : '画像を選ぶ';
+  $('fMine').innerHTML = S.custom.length ? S.custom.map(d => `<div>${art(d, 1)}<span>${esc(d.name)}</span><button data-del="${d.id}">消す</button></div>`).join('') : '<p class="note">まだありません</p>';
+  $('fMine').querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    const id = b.dataset.del, d = S.custom.find(x => x.id === id); if (!confirm('「' + d.name + '」を消しますか?')) return;
+    S.custom = S.custom.filter(x => x.id !== id); S.slots.forEach(sl => { if (sl.cid === id) sl.stock = 0; });
+    save(); render(); drawFac();
+  });
+}
+$('facBtn').onclick = () => { drawFac(); $('facOv').hidden = false; };
+$('fRand').onclick = () => {
+  const nm = randName(false); $('fName').value = nm.name; $('fFizz').checked = nm.fizz;
+  F.type = pick(SHAPE_KEYS); F.color = randColor(); $('fPrice').value = BASE_PRICE[matOf(F.type)] + rnd(6) * 10; SND.tick(); drawFac();
+};
+$('fImg').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    const k = Math.min(1, 200 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+    c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    F.img = c.toDataURL('image/jpeg', .82); URL.revokeObjectURL(url); drawFac();
+  };
+  im.onerror = () => { toast('この画像は読めませんでした'); URL.revokeObjectURL(url); };
+  im.src = url; e.target.value = '';
+};
+$('fImgClr').onclick = () => { F.img = null; drawFac(); };
+$('fMake').onclick = () => {
+  const name = $('fName').value.trim(); if (!name) { toast('名前を入れてください'); $('fName').focus(); return; }
+  if (S.custom.length >= 24) { toast('作れるのは24本までです。どれか消してください'); return; }
+  const price = Math.max(10, Math.min(990, Math.round((+$('fPrice').value || 150) / 10) * 10));
+  const d = { id: 'c' + (S.uid++), name, color: F.color, type: F.type, img: F.img, price, custom: true, fizz: $('fFizz').checked };
+  S.custom.push(d);
+  const empty = S.slots.findIndex(sl => sl.stock <= 0 || !slotDrink(sl)), at = empty >= 0 ? empty : rnd(12);
+  S.slots[at] = { cid: d.id, stock: 3, hot: false, price };
+  save(); render(); SND.gakon(); say('新商品「' + name + '」 入荷しました!', true);
+  toast('「' + name + '」を自販機に並べました'); $('fName').value = ''; $('fFizz').checked = false; F.img = null; drawFac();
+};
+
+/* ── その他 ── */
+$('sndBtn').onclick = () => { S.sound = !S.sound; save(); render(); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('.ov').hidden = true);
+document.querySelectorAll('.ov').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.hidden = true; }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.querySelectorAll('.ov').forEach(o => o.hidden = true); if (T.on) closeThrow(); } });
+
+S.tray.forEach(t => delete t.arriving);
+if (S.slots.length !== 12 || S.slots.some(sl => sl.did)) S.slots = Array.from({ length: 12 }, () => newSlot());
+save(); render(); say('いらっしゃいませ', false);
+</script>
+</body>
+</html>
